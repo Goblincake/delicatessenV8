@@ -279,6 +279,7 @@ def get_analytics():
     daily_orders = {}
     daily_costs = {}
     daily_profits = {}
+    daily_product_cogs = {}
     popular_items = {}
     hourly_orders = {}
     item_costs = {}
@@ -366,6 +367,8 @@ def get_analytics():
         daily_costs.setdefault(date, 0)
         # add product COGS and per-order delivery cost
         daily_costs[date] += order_item_cost_total + courier_cost_per_order
+        daily_product_cogs.setdefault(date, 0)
+        daily_product_cogs[date] += order_item_cost_total
         daily_profits.setdefault(date, 0)
         daily_profits[date] += total_revenue - (order_item_cost_total + courier_cost_per_order)
 
@@ -380,6 +383,20 @@ def get_analytics():
         daily_costs[date] = daily_costs.get(date, 0) + rent_per_day + labor_per_day
         # recompute profit for the day
         daily_profits[date] = daily_sales.get(date, 0) - daily_costs.get(date, 0)
+
+    # Build per-day breakdowns for frontend detail view
+    daily_breakdowns = []
+    for d, _ in sorted(daily_sales.items()):
+        bd = {
+            'product_cogs': daily_product_cogs.get(d, 0),
+            'rent': rent_per_day,
+            'labor': labor_per_day,
+            'courier': courier_cost_per_order * daily_orders.get(d, 0),
+            'total_cost': daily_costs.get(d, 0),
+            'profit': daily_profits.get(d, 0),
+            'orders': daily_orders.get(d, 0)
+        }
+        daily_breakdowns.append([d, bd])
     
     sorted_daily = sorted(daily_sales.items())
     sorted_hourly = sorted(hourly_orders.items())

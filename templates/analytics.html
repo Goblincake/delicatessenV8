@@ -955,6 +955,18 @@
                     }]
                 },
                 options: {
+                    onClick: function(evt, elements) {
+                        if (!elements || elements.length === 0) return;
+                        const el = elements[0];
+                        const idx = el.index;
+                        const date = analyticsData.daily_costs[idx][0];
+                        const breakdownArr = analyticsData.daily_breakdowns || [];
+                        let breakdown = null;
+                        for (const [d, b] of breakdownArr) {
+                            if (d === date) { breakdown = b; break; }
+                        }
+                        if (breakdown) showBreakdownModal(date, breakdown);
+                    },
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -971,6 +983,28 @@
                 }
                 });
             } catch (err) { console.error('Failed to create dailyCostsProfitsChart', err); }
+
+            // Show breakdown modal for a date
+            function showBreakdownModal(date, breakdown) {
+                const modal = document.getElementById('chartModal');
+                const titleEl = document.getElementById('modalChartTitle');
+                const holder = document.getElementById('modalCanvasHolder');
+                titleEl.textContent = 'Breakdown for ' + formatDate(date);
+                holder.innerHTML = `
+                    <div style="padding:0.5rem;color:var(--fg);">
+                        <div><strong>Orders:</strong> ${breakdown.orders}</div>
+                        <div><strong>Product COGS:</strong> $${Number(breakdown.product_cogs).toLocaleString()}</div>
+                        <div><strong>Rent (per day):</strong> $${Number(breakdown.rent).toLocaleString()}</div>
+                        <div><strong>Labor (per day):</strong> $${Number(breakdown.labor).toLocaleString()}</div>
+                        <div><strong>Courier (total):</strong> $${Number(breakdown.courier).toLocaleString()}</div>
+                        <div style="margin-top:0.5rem;"><strong>Total Costs:</strong> $${Number(breakdown.total_cost).toLocaleString()}</div>
+                        <div style="margin-top:0.5rem;color:${breakdown.profit<0?'#f44336':'#4caf50'};"><strong>Net Profit:</strong> $${Number(breakdown.profit).toLocaleString()}</div>
+                    </div>
+                `;
+                // ensure modalOpenChartId is cleared so closeChartModal won't attempt to restore a canvas
+                modalOpenChartId = null;
+                modal.style.display = 'flex';
+            }
 
             // (Removed legacy per-item and profit-margin charts)
             } catch (err) {
@@ -1057,7 +1091,6 @@
         }
 
         function closeChartModal() {
-            if (!modalOpenChartId) return;
             const canvas = document.getElementById(modalOpenChartId);
             const chart = chartInstances[modalOpenChartId];
             const modal = document.getElementById('chartModal');
