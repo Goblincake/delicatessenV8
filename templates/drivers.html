@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Repartidores</title>
+    {% include '_header_css.html' %}
+    <style>
+        body { background: #1e1e1e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .container { max-width: 600px; margin: 2rem auto; background: #2d2d2d; border-radius: 8px; padding: 2rem; box-shadow: 0 2px 8px #0008; }
+        h1 { text-align: center; margin-bottom: 1.5rem; }
+        form { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        input, button { padding: 0.5rem; border-radius: 4px; border: none; }
+        input { flex: 1; background: #333; color: #e0e0e0; }
+        button { background: #0e639c; color: #fff; cursor: pointer; font-weight: 600; }
+        button:hover { background: #2196f3; }
+        ul { list-style: none; padding: 0; }
+        li { background: #333; margin-bottom: 0.5rem; padding: 0.75rem 1rem; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .delete-btn { background: #f44336; color: #fff; border: none; padding: 0.3rem 0.7rem; border-radius: 3px; cursor: pointer; }
+        .delete-btn:hover { background: #d32f2f; }
+    </style>
+</head>
+<body>
+    {% include '_header.html' %}
+    <div class="container">
+        <h1>Gestión de Repartidores</h1>
+        <form id="driverForm">
+            <input type="text" id="driverName" placeholder="Nombre del repartidor" required />
+            <button type="submit">Agregar</button>
+        </form>
+        <ul id="driverList"></ul>
+    </div>
+    <script>
+        async function fetchDrivers() {
+            const res = await fetch('/api/drivers');
+            const drivers = await res.json();
+            const list = document.getElementById('driverList');
+            list.innerHTML = '';
+            drivers.forEach((driver, idx) => {
+                const li = document.createElement('li');
+                li.textContent = driver.name;
+                const del = document.createElement('button');
+                del.textContent = 'Eliminar';
+                del.className = 'delete-btn';
+                del.onclick = async () => {
+                    await fetch(`/api/drivers/${idx}`, { method: 'DELETE' });
+                    fetchDrivers();
+                };
+                li.appendChild(del);
+                list.appendChild(li);
+            });
+        }
+        document.getElementById('driverForm').onsubmit = async e => {
+            e.preventDefault();
+            const name = document.getElementById('driverName').value.trim();
+            if (!name) return;
+            await fetch('/api/drivers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            document.getElementById('driverName').value = '';
+            fetchDrivers();
+        };
+        fetchDrivers();
+
+        // Language toggle
+        const translations = {
+            es: {
+                menu: "🛒 Menú",
+                pedidos: "📋 Pedidos",
+                analytics: "📊 Análisis",
+                drivers: "🛵 Repartidores",
+                deliveries: "🚚 Entregas",
+                langBtn: "🌐 EN",
+                title: "Gestión de Repartidores",
+                name: "Nombre del repartidor",
+                add: "Agregar"
+            },
+            en: {
+                menu: "🛒 Menu",
+                pedidos: "📋 Orders",
+                analytics: "📊 Analytics",
+                drivers: "🛵 Drivers",
+                deliveries: "🚚 Deliveries",
+                langBtn: "🌐 ES",
+                title: "Driver Management",
+                name: "Driver name",
+                add: "Add"
+            }
+        };
+
+        let currentLang = localStorage.getItem('lang') || 'es';
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'es' ? 'en' : 'es';
+            localStorage.setItem('lang', currentLang);
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            document.getElementById('langBtn').textContent = translations[currentLang].langBtn;
+            // Update navigation
+            document.querySelector('a[href="/"]').textContent = translations[currentLang].menu;
+            document.querySelector('a[href="/pedidos"]').textContent = translations[currentLang].pedidos;
+            document.querySelector('a[href="/analytics"]').textContent = translations[currentLang].analytics;
+            document.querySelector('a[href="/drivers"]').textContent = translations[currentLang].drivers;
+            document.querySelector('a[href="/deliveries"]').textContent = translations[currentLang].deliveries;
+            // Update title
+            document.querySelector('h1').textContent = translations[currentLang].title;
+            // Update form
+            document.querySelector('input').placeholder = translations[currentLang].name;
+            document.querySelector('button[type="submit"]').textContent = translations[currentLang].add;
+        }
+
+        // Apply on load
+        applyLanguage();
+    </script>
+</body>
+</html>

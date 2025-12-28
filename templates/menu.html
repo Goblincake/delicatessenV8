@@ -1,0 +1,26 @@
+            <!-- Menu Panel -->
+            <div class="menu-panel">
+                {% for category, items in menu.items() %}
+                <div class="category">
+                    <div class="category-header" onclick="toggleCategory(this)">
+                        <span>{{ category }}</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="category-items">
+                        {% for item_name, item_data in items.items() %}
+                        {% if item_data is mapping %}
+                        <div class="menu-item" data-item="{{ item_name }}" data-price="{{ item_data.price }}" onclick="addToOrder(this.dataset.item, parseInt(this.dataset.price))">
+                            <div class="item-name">{{ item_name }}</div>
+                            <div class="item-price">${{ item_data.price }}</div>
+                        </div>
+                        {% else %}
+                        <div class="menu-item" data-item="{{ item_name }}" data-price="{{ item_data }}" onclick="addToOrder(this.dataset.item, parseInt(this.dataset.price))">
+                            <div class="item-name">{{ item_name }}</div>
+                            <div class="item-price">${{ item_data }}</div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>

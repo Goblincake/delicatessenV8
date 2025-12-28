@@ -1,0 +1,17 @@
+# Metabase Auto-Configuration
+# This file auto-configures Metabase to skip the setup wizard
+version: 1
+config:
+  users:
+    - first_name: Admin
+      last_name: User
+      password: admin10
+      email: admin@delicatessen.local
+  databases:
+    - name: Delicatessen Orders
+      engine: sqlite
+      details:
+        db: "delicatessen.db"
+      auto_run_queries: true
+      is_sample: false
+

@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Pedidos - Rotisería</title>
+    <style>
+        :root {
+            --bg: #1e1e1e;
+            --bg-secondary: #2d2d2d;
+            --bg-card: #333333;
+            --fg: #e0e0e0;
+            --fg-muted: #a0a0a0;
+            --accent: #0e639c;
+            --accent-hover: #1177bb;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --border: #444444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background-color: var(--bg-secondary);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Menu Panel */
+        .menu-panel {
+            flex: 2;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .category {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .category-header {
+            background-color: var(--bg-card);
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-header:hover {
+            background-color: #3a3a3a;
+        }
+
+        .category-header .toggle-icon {
+            transition: transform 0.2s;
+        }
+
+        .category.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .category.collapsed .category-items {
+            display: none;
+        }
+
+        .category-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+            padding: 1rem;
+        }
+
+        .menu-item {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .menu-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-item:active {
+            transform: translateY(0);
+        }
+
+        .menu-item .item-name {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .menu-item .item-price {
+            color: var(--success);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Order Panel */
+        .order-panel {
+            flex: 1;
+            min-width: 350px;
+            max-width: 450px;
+            background-color: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Ready Orders Panel */
+        .ready-orders-panel {
+            width: 100%;
+            background-color: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+
+        .ready-orders-list {
+            padding: 1rem;
+        }
+
+        .ready-orders-list .order-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            padding: 1rem;
+        }
+
+        .ready-orders-list .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .ready-orders-list .order-code {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .ready-orders-list .order-customer {
+            color: var(--fg-muted);
+            font-size: 0.9rem;
+        }
+
+        .ready-orders-list .order-time {
+            font-size: 0.8rem;
+            color: var(--fg-muted);
+        }
+
+        .ready-orders-list .order-status-badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .ready-orders-list .finished {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        /* Improve contrast for finished (accent-colored) cards */
+        .ready-orders-list .finished .order-customer,
+        .ready-orders-list .finished .order-time,
+        .ready-orders-list .finished .order-code,
+        .ready-orders-list .finished .order-total,
+        .ready-orders-list .finished .order-status-badge {
+            color: #ffffffcc; /* slightly translucent white for hierarchy */
+        }
+
+        .ready-orders-list .finished .order-item {
+            background-color: rgba(255,255,255,0.06); /* subtle translucent row */
+            color: #fff;
+        }
+
+        .ready-orders-list .finished .item-qty {
+            color: #ffffff; /* ensure qty stands out */
+        }
+
+        .ready-orders-list .order-body {
+            margin-bottom: 0.5rem;
+        }
+
+        .ready-orders-list .order-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .ready-orders-list .item-qty {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .ready-orders-list .order-total {
+            font-weight: 600;
+            text-align: right;
+            margin-bottom: 0.5rem;
+        }
+
+        .ready-orders-list .order-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .ready-orders-list .driver-select {
+            flex: 1;
+        }
+
+        .ready-orders-list .assigned-driver {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .order-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .order-header h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--fg-muted);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--fg);
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .order-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background-color: var(--bg-card);
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .order-item-info {
+            flex: 1;
+        }
+
+        .order-item-name {
+            font-weight: 500;
+        }
+
+        .order-item-price {
+            color: var(--fg-muted);
+            font-size: 0.9rem;
+        }
+
+        .order-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .qty-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--bg-secondary);
+            color: var(--fg);
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qty-btn:hover {
+            background-color: var(--accent);
+        }
+
+        .qty-btn.remove {
+            background-color: var(--danger);
+        }
+
+        .order-item-qty {
+            min-width: 30px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .order-empty {
+            text-align: center;
+            padding: 2rem;
+            color: var(--fg-muted);
+        }
+
+        .order-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            background-color: var(--bg-card);
+        }
+
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .order-total .total-amount {
+            color: var(--success);
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-secondary);
+            color: var(--fg);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 1.2rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--fg);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 1rem;
+        }
+
+        .receipt {
+            font-family: 'Courier New', monospace;
+            background-color: var(--bg-card);
+            padding: 1rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+        }
+
+        /* History Modal */
+        .history-item {
+            background-color: var(--bg-card);
+            border-radius: 4px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .history-item-customer {
+            font-weight: 600;
+        }
+
+        .history-item-date {
+            color: var(--fg-muted);
+            font-size: 0.85rem;
+        }
+
+        .history-item-total {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background-color: var(--success);
+            color: white;
+            border-radius: 4px;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1001;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .order-panel {
+                max-width: none;
+                min-width: auto;
+                border-left: none;
+                border-top: 1px solid var(--border);
+            }
+
+            .ready-orders-panel {
+                margin-top: 0;
+                border-top: none;
+            }
+
+            .category-items {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% include '_header.html' %}
+
+        <main class="main-content">
+            {% include 'menu.html' %}
+
+            <!-- Order Panel -->
+            <div class="order-panel">
+                <div class="order-header">
+                    <h2 id="orderTitle">🛒 Pedido Actual</h2>
+                    <div class="form-group">
+                        <label for="customerName" id="customerLabel">Nombre del Cliente</label>
+                        <input type="text" id="customerName" placeholder="Cliente Ocasional">
+                    </div>
+                    <div class="form-group">
+                        <label for="orderNotes" id="notesLabel">Notas del pedido</label>
+                        <textarea id="orderNotes" placeholder="Ej: Sin cebolla, bien cocido..."></textarea>
+                    </div>
+                </div>
+
+                <div class="order-items" id="orderItems">
+                    <div class="order-empty">
+                        <p>No hay ítems en el pedido</p>
+                        <p style="font-size: 0.85rem; margin-top: 0.5rem;">Haz clic en un producto para agregarlo</p>
+                    </div>
+                </div>
+
+                <div class="order-footer">
+                    <div class="order-total">
+                        <span id="totalLabel">Total:</span>
+                        <span class="total-amount" id="totalAmount">$0</span>
+                    </div>
+                    <div class="order-actions">
+                        <button class="btn btn-secondary" onclick="clearOrder()" id="clearBtn">Limpiar</button>
+                        <button class="btn btn-primary" onclick="confirmOrder()" id="placeOrderBtn">✓ Confirmar Pedido</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Ready Orders Panel (moved below container to avoid overlap) -->
+    </div>
+
+    <!-- Ready Orders Panel (placed below main container to avoid overlapping the menu) -->
+    <div class="ready-orders-panel" style="margin-top:1rem;">
+        <div style="padding:0.5rem 2rem; display:flex; gap:1rem; align-items:center;">
+            <strong style="font-size:0.95rem;">Estado de Debug:</strong>
+            <div id="readyDebug" style="background:var(--bg-card);padding:0.25rem 0.5rem;border-radius:6px;">Pedidos listos: <span id="readyCount">0</span></div>
+            <button id="toggleReadyBtn" class="btn btn-secondary" style="padding:0.25rem 0.5rem;">Ocultar/Mostrar lista</button>
+        </div>
+        <div class="order-header" style="padding:0.75rem 2rem;">
+            <h2 id="readyTitle">🚚 Pedidos Listos para Entrega</h2>
+        </div>
+        <div style="display:flex; gap:1rem; padding:1rem;">
+            <div style="flex:1;">
+                <div class="ready-orders-list" id="readyOrdersList" style="padding:0;">
+                    <div class="order-empty">
+                        <p>No hay pedidos listos</p>
+                    </div>
+                </div>
+                <!-- Bulk Assign Section -->
+                <div style="margin-top:1rem; padding:1rem; background:var(--bg-card); border-radius:8px; border:1px solid var(--border);">
+                    <h4 style="margin:0 0 0.5rem 0; font-size:1rem;">Asignar Seleccionados</h4>
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <select id="bulkDriverSelect" style="flex:1;">
+                            <option value="">-- Seleccionar Repartidor --</option>
+                        </select>
+                        <button id="bulkAssignBtn" class="btn btn-primary" style="padding:0.5rem 1rem;">Asignar</button>
+                        <button id="selectAllBtn" class="btn btn-secondary" style="padding:0.5rem 1rem;">Seleccionar Todos</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="assignedList" style="width:320px; min-width:260px;">
+                <div class="order-header" style="padding:0.5rem 1rem;">
+                    <h3 style="margin:0; font-size:1rem;">🟦 Asignados</h3>
+                </div>
+                <div style="padding:0.75rem;">
+                    <div class="order-empty" id="assignedEmpty">
+                        <p>No hay repartidores asignados</p>
+                    </div>
+                    <div id="assignedItems"></div>
+                </div>
+            </div>
+
+            <div id="completedList" style="width:320px; min-width:260px;">
+                <div class="order-header" style="padding:0.5rem 1rem;">
+                    <h3 style="margin:0; font-size:1rem;">✅ Completados</h3>
+                </div>
+                <div style="padding:0.75rem;">
+                    <div class="order-empty" id="completedEmpty">
+                        <p>No hay pedidos completados</p>
+                    </div>
+                    <div id="completedItems"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div class="modal-overlay" id="receiptModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>✅ Pedido Confirmado</h3>
+                <button class="modal-close" onclick="closeModal('receiptModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="receipt" id="receiptContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal-overlay" id="historyModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>📋 Historial de Pedidos</h3>
+                <button class="modal-close" onclick="closeModal('historyModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="historyContent">
+                <p>Cargando...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Order state
+        let selectedItems = {};
+
+        // ensure escapeHtml exists (fallback)
+        if (typeof escapeHtml === 'undefined') {
+            function escapeHtml(text) { if (text == null) return ''; const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
+        }
+
+        function addToOrder(item, price) {
+            if (selectedItems[item]) {
+                selectedItems[item].quantity += 1;
+            } else {
+                selectedItems[item] = { price: price, quantity: 1 };
+            }
+            updateOrderDisplay();
+            showToast(`${item} agregado`);
+        }
+
+        function removeFromOrder(item) {
+            if (selectedItems[item]) {
+                if (selectedItems[item].quantity > 1) {
+                    selectedItems[item].quantity -= 1;
+                } else {
+                    delete selectedItems[item];
+                }
+                updateOrderDisplay();
+            }
+        }
+
+        function incrementItem(item) {
+            if (selectedItems[item]) {
+                selectedItems[item].quantity += 1;
+                updateOrderDisplay();
+            }
+        }
+
+        function updateOrderDisplay() {
+            const container = document.getElementById('orderItems');
+            const items = Object.entries(selectedItems);
+            
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="order-empty">
+                        <p>No hay ítems en el pedido</p>
+                        <p style="font-size: 0.85rem; margin-top: 0.5rem;">Haz clic en un producto para agregarlo</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = items.map(([name, details]) => {
+                    const escapedName = name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    return `
+                    <div class="order-item">
+                        <div class="order-item-info">
+                            <div class="order-item-name">${name}</div>
+                            <div class="order-item-price">$${details.price} c/u</div>
+                        </div>
+                        <div class="order-item-controls">
+                            <button class="qty-btn" onclick="removeFromOrder('${escapedName}')">−</button>
+                            <span class="order-item-qty">${details.quantity}</span>
+                            <button class="qty-btn" onclick="incrementItem('${escapedName}')">+</button>
+                        </div>
+                    </div>
+                `}).join('');
+            }
+
+            // Update total
+            const total = items.reduce((sum, [_, details]) => sum + (details.price * details.quantity), 0);
+            document.getElementById('totalAmount').textContent = `$${total}`;
+        }
+
+        function clearOrder() {
+            selectedItems = {};
+            document.getElementById('customerName').value = '';
+            document.getElementById('orderNotes').value = '';
+            updateOrderDisplay();
+        }
+
+        async function confirmOrder() {
+            if (Object.keys(selectedItems).length === 0) {
+                showToast('No hay ítems en el pedido', 'warning');
+                return;
+            }
+
+            const customer = document.getElementById('customerName').value.trim() || 'Cliente Ocasional';
+            const notes = document.getElementById('orderNotes').value.trim();
+            const total = Object.entries(selectedItems).reduce(
+                (sum, [_, details]) => sum + (details.price * details.quantity), 0
+            );
+
+            try {
+                const response = await fetch('/api/order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customer: customer,
+                        items: selectedItems,
+                        notes: notes,
+                        total: total
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Generate receipt
+                    const orderCode = data.order.code || `P${String(data.order.id).padStart(3, '0')}`;
+                    let receipt = `=== Comprobante de Pedido ===\n`;
+                    receipt += `Pedido: ${orderCode}\n`;
+                    receipt += `Fecha: ${data.order.timestamp}\n`;
+                    receipt += `Cliente: ${customer}\n`;
+                    receipt += `------------------------\n`;
+
+                    for (const [item, details] of Object.entries(selectedItems)) {
+                        const subtotal = details.price * details.quantity;
+                        receipt += `${details.quantity}x ${item.padEnd(25)} $${subtotal}\n`;
+                    }
+
+                    receipt += `------------------------\n`;
+                    receipt += `Total: $${total}\n`;
+                    receipt += `========================`;
+
+                    if (notes) {
+                        receipt += `\n\nNotas: ${notes}`;
+                    }
+
+                    document.getElementById('receiptContent').textContent = receipt;
+                    document.getElementById('receiptModal').classList.add('active');
+
+                    clearOrder();
+                } else {
+                    showToast(data.error || 'Error al crear pedido', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        async function showHistory() {
+            document.getElementById('historyModal').classList.add('active');
+            
+            try {
+                const response = await fetch('/api/history');
+                const history = await response.json();
+
+                const container = document.getElementById('historyContent');
+                
+                if (history.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: var(--fg-muted);">No hay pedidos en el historial</p>';
+                } else {
+                    container.innerHTML = history.reverse().map(order => `
+                        <div class="history-item">
+                            <div class="history-item-header">
+                                <span class="history-item-customer">${order.customer}</span>
+                                <span class="history-item-date">${order.timestamp}</span>
+                            </div>
+                            <div style="font-size: 0.9rem; color: var(--fg-muted); margin-bottom: 0.5rem;">
+                                ${Object.entries(order.items).map(([item, details]) => 
+                                    `${details.quantity}x ${item}`
+                                ).join(', ')}
+                            </div>
+                            ${order.notes ? `<div style="font-size: 0.85rem; font-style: italic; color: var(--fg-muted);">📝 ${order.notes}</div>` : ''}
+                            <div class="history-item-total">Total: $${order.total}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('historyContent').innerHTML = '<p style="color: var(--danger);">Error al cargar historial</p>';
+            }
+        }
+
+        async function clearAllOrders() {
+            if (!confirm('¿Borrar todos los pedidos? Esta acción no se puede deshacer.')) return;
+            try {
+                const resp = await fetch('/api/history/clear', { method: 'POST' });
+                const data = await resp.json();
+                if (data && data.success) {
+                    showToast('Todos los pedidos eliminados', 'success');
+                    // refresh ready orders and history UI
+                    renderReadyOrders([], []);
+                    document.getElementById('historyContent').innerHTML = '<p style="text-align: center; color: var(--fg-muted);">No hay pedidos en el historial</p>';
+                } else {
+                    showToast('Error al eliminar pedidos', 'error');
+                }
+            } catch (err) {
+                console.error('Error clearing history', err);
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function toggleCategory(header) {
+            header.parentElement.classList.toggle('collapsed');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.backgroundColor = type === 'success' ? 'var(--success)' : 
+                                         type === 'warning' ? 'var(--warning)' : 'var(--danger)';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // Ready Orders
+        let readyDriversCache = [];
+        let readyDelegationAttached = false;
+        let assignedDelegationAttached = false;
+        // When the user is interacting with a select (opening dropdown), suspend the periodic refresh
+        let suspendRefresh = false;
+
+        async function fetchReadyDrivers() {
+            const res = await fetch('/api/drivers');
+            readyDriversCache = await res.json();
+        }
+
+        async function loadReadyOrders(force = false) {
+            if (!force && suspendRefresh) {
+                console.debug('loadReadyOrders: skipped due to user interaction (suspendRefresh=true)');
+                return;
+            }
+            try {
+                console.debug('loadReadyOrders: fetching drivers and history');
+                await fetchReadyDrivers();
+                const response = await fetch('/api/history');
+                const orders = await response.json();
+                console.debug('loadReadyOrders: fetched', orders.length, 'orders');
+                const finishedOrders = orders.filter(o => o.status === 'finished');
+                const completedOrders = orders.filter(o => o.status === 'completed');
+                console.debug('loadReadyOrders: finished', finishedOrders.length, 'completed', completedOrders.length);
+                renderReadyOrders(finishedOrders, completedOrders);
+            } catch (error) {
+                console.error('Error loading ready orders:', error);
+            }
+        }
+
+        function renderReadyOrders(finishedOrders, completedOrders) {
+                    finishedOrders = finishedOrders || [];
+                    completedOrders = completedOrders || [];
+            const container = document.getElementById('readyOrdersList');
+            const assignedItemsEl = document.getElementById('assignedItems');
+            const assignedEmpty = document.getElementById('assignedEmpty');
+            const completedItemsEl = document.getElementById('completedItems');
+            const completedEmpty = document.getElementById('completedEmpty');
+            const bulkDriverSelect = document.getElementById('bulkDriverSelect');
+            console.debug('renderReadyOrders: rendering', finishedOrders.length, 'finished; completed', completedOrders.length);
+            // update visible counter (show finished count)
+            const countEl = document.getElementById('readyCount');
+            if (countEl) countEl.textContent = String((finishedOrders && finishedOrders.length) || 0);
+
+            // Populate bulk driver select
+            bulkDriverSelect.innerHTML = '<option value="">' + translations[currentLang].selectDriver + '</option>';
+            readyDriversCache.forEach(driver => {
+                bulkDriverSelect.innerHTML += `<option value="${driver.name}">${driver.name}</option>`;
+            });
+
+            // Separate assigned and unassigned
+            const assigned = finishedOrders.filter(o => o.driver);
+            const unassigned = finishedOrders.filter(o => !o.driver);
+
+            // Render left: unassigned finished orders with checkboxes
+            if (!unassigned || unassigned.length === 0) {
+                container.innerHTML = `<div class="order-empty"><p>${translations[currentLang].noReadyOrders}</p></div>`;
+            } else {
+                container.innerHTML = unassigned.map(order => {
+                    const time = order.timestamp.split(' ')[1];
+                    const orderCode = order.code || `P${String(order.id).padStart(3, '0')}`;
+                    return `
+                        <div class="order-card finished">
+                            <div class="order-header">
+                                <div style="display:flex; align-items:center; gap:0.5rem;">
+                                    <input type="checkbox" class="order-checkbox" data-orderid="${order.id}">
+                                    <div>
+                                        <div class="order-code">${orderCode}</div>
+                                        <div class="order-customer">${escapeHtml(order.customer)}</div>
+                                    </div>
+                                </div>
+                                <div class="order-time">${time}<br><span class="order-status-badge finished">${translations[currentLang].ready}</span></div>
+                            </div>
+                            <div class="order-body">
+                                ${Object.entries(order.items).map(([item, d]) => `
+                                    <div class="order-item">
+                                        <span><span class="item-qty">${d.quantity}x</span> ${escapeHtml(item)}</span>
+                                    </div>
+                                `).join('')}
+                                ${order.notes ? `<div class="order-notes">📝 ${escapeHtml(order.notes)}</div>` : ''}
+                                <div class="order-total">$${order.total.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Add event listeners for bulk actions
+            document.getElementById('bulkAssignBtn').onclick = async () => {
+                const driver = bulkDriverSelect.value;
+                if (!driver) {
+                    showToast(translations[currentLang].selectDriverToast, 'warning');
+                    return;
+                }
+                const selectedCheckboxes = document.querySelectorAll('#readyOrdersList .order-checkbox:checked');
+                if (selectedCheckboxes.length === 0) {
+                    showToast(translations[currentLang].selectOrderToast, 'warning');
+                    return;
+                }
+                for (const cb of selectedCheckboxes) {
+                    const orderId = cb.getAttribute('data-orderid');
+                    try {
+                        await fetch(`/api/order/${orderId}/assign_driver`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ driver: driver })
+                        });
+                    } catch (error) {
+                        console.error('Error assigning driver:', error);
+                    }
+                }
+                showToast(`${selectedCheckboxes.length} ${translations[currentLang].assignedToast} ${driver}`);
+                loadReadyOrders(true);
+            };
+
+            document.getElementById('selectAllBtn').onclick = () => {
+                const checkboxes = document.querySelectorAll('#readyOrdersList .order-checkbox');
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                checkboxes.forEach(cb => cb.checked = !allChecked);
+            };
+
+            // unassign and complete buttons — use delegated click on assignedItemsEl
+            if (!assignedDelegationAttached) {
+                assignedItemsEl.addEventListener('click', async (e) => {
+                    const btn = e.target.closest('.unassign-btn, .complete-btn');
+                    if (!btn) return;
+                    const oid = btn.getAttribute('data-orderid');
+                    const isComplete = btn.classList.contains('complete-btn');
+                    try {
+                        const endpoint = isComplete ? `/api/order/${oid}/complete` : `/api/order/${oid}/unassign`;
+                        const resp = await fetch(endpoint, { method: 'POST' });
+                        if (resp && resp.ok) {
+                            showToast(isComplete ? translations[currentLang].completedToast : translations[currentLang].unassignedToast);
+                            suspendRefresh = false;
+                            loadReadyOrders(true);
+                        }
+                    } catch (err) {
+                        console.error('Error:', err);
+                    }
+                });
+                assignedDelegationAttached = true;
+            }
+
+            // Render middle: assigned orders grouped by driver
+            if (!assigned || assigned.length === 0) {
+                assignedItemsEl.innerHTML = '';
+                assignedEmpty.style.display = 'block';
+            } else {
+                assignedEmpty.style.display = 'none';
+                // Group by driver
+                const grouped = {};
+                assigned.forEach(o => {
+                    if (!grouped[o.driver]) grouped[o.driver] = [];
+                    grouped[o.driver].push(o);
+                });
+                assignedItemsEl.innerHTML = Object.entries(grouped).map(([driver, orders]) => `
+                    <div class="driver-group" style="margin-bottom:1rem; border:1px solid var(--border); border-radius:8px; padding:0.75rem;">
+                        <div style="font-weight:700; margin-bottom:0.5rem;">${escapeHtml(driver)}</div>
+                        ${orders.map(o => {
+                            const code = o.code || `P${String(o.id).padStart(3,'0')}`;
+                            const itemsSummary = Object.entries(o.items).map(([it,d])=> `${d.quantity}x ${escapeHtml(it)}`).join(', ');
+                            return `
+                                <div class="order-card" style="margin-bottom:0.5rem; padding:0.5rem; background:var(--bg-secondary);">
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <div>
+                                            <div style="font-weight:600">${code} • ${escapeHtml(o.customer)}</div>
+                                            <div style="font-size:0.85rem; color:var(--fg-muted)">${itemsSummary}</div>
+                                        </div>
+                                        <div style="text-align:right;">
+                                            <div style="font-size:0.9rem;">$${o.total}</div>
+                                            <div style="margin-top:0.25rem;">
+                                                <button class="btn btn-success complete-btn" data-orderid="${o.id}" style="padding:0.2rem 0.4rem; font-size:0.8rem;">${translations[currentLang].complete}</button>
+                                                <button class="btn btn-secondary unassign-btn" data-orderid="${o.id}" style="padding:0.2rem 0.4rem; font-size:0.8rem;">${translations[currentLang].unassign}</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `).join('');
+            }
+
+            // Render right: completed orders
+            if (!completedOrders || completedOrders.length === 0) {
+                completedItemsEl.innerHTML = '';
+                completedEmpty.style.display = 'block';
+            } else {
+                completedEmpty.style.display = 'none';
+                completedItemsEl.innerHTML = completedOrders.slice().reverse().map(o => {
+                    const code = o.code || `P${String(o.id).padStart(3,'0')}`;
+                    const itemsSummary = Object.entries(o.items).map(([it,d])=> `${d.quantity}x ${escapeHtml(it)}`).join(', ');
+                    const driverName = o.driver ? escapeHtml(o.driver) : translations[currentLang].unassigned;
+                    return `
+                        <div class="order-card" style="margin-bottom:0.5rem; padding:0.75rem; opacity:0.9;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-weight:700">${code}</div>
+                                    <div style="font-size:0.9rem; color:var(--fg-muted)">${driverName} • ${escapeHtml(o.customer)}</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:0.9rem;">${o.total ? '$'+o.total : ''}</div>
+                                </div>
+                            </div>
+                            <div style="margin-top:0.5rem; font-size:0.9rem; color:var(--fg-muted)">${itemsSummary}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Load ready orders on page load
+        loadReadyOrders();
+        // wire toggle
+        document.getElementById('toggleReadyBtn')?.addEventListener('click', () => {
+            const list = document.getElementById('readyOrdersList');
+            if (!list) return;
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+        });
+        // setInterval(loadReadyOrders, 3000); // Commented out to stop continuous polling
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Keyboard shortcut to close modals
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+
+        // Load ready orders on page load
+        loadReadyOrders();
+        // wire toggle
+        document.getElementById('toggleReadyBtn')?.addEventListener('click', () => {
+            const list = document.getElementById('readyOrdersList');
+            if (!list) return;
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+        });
+        // setInterval(loadReadyOrders, 3000); // Commented out to stop continuous polling
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Keyboard shortcut to close modals
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

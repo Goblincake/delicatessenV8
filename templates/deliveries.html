@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entregas - Asignar Repartidores</title>
+    {% include '_header_css.html' %}
+    <style>
+        body { background: #1e1e1e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .container { max-width: 700px; margin: 2rem auto; background: #2d2d2d; border-radius: 8px; padding: 2rem; box-shadow: 0 2px 8px #0008; }
+        h1 { text-align: center; margin-bottom: 1.5rem; }
+        .header-actions { display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; }
+        .btn { padding: 0.6rem 1rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-secondary { background-color: #333; color: #e0e0e0; border: 1px solid #444; }
+        .btn-secondary:hover { background-color: #222; }
+        .order-card { background: #232323; border-radius: 6px; margin-bottom: 1.2rem; padding: 1.2rem; border: 1px solid #444; }
+        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7rem; }
+        .order-code { font-size: 1.1rem; font-weight: 700; color: #0e639c; font-family: 'Courier New', monospace; }
+        .order-customer { color: #a0a0a0; font-size: 0.95rem; }
+        .order-time { color: #a0a0a0; font-size: 0.9rem; }
+        .order-items { margin-bottom: 0.5rem; }
+        .order-item { font-size: 1rem; margin-bottom: 0.2rem; }
+        .order-notes { color: #ff9800; font-size: 0.95rem; margin-bottom: 0.5rem; }
+        .order-total { color: #4caf50; font-weight: 700; text-align: right; margin-bottom: 0.5rem; }
+        .driver-row { display: flex; align-items: center; gap: 0.7rem; margin-top: 0.5rem; }
+        select { background: #333; color: #e0e0e0; border: 1px solid #444; border-radius: 4px; padding: 0.4rem 0.7rem; }
+        .assigned-driver { color: #4caf50; font-weight: 600; }
+    </style>
+</head>
+<body>
+    {% include '_header.html' %}
+    <div class="container">
+        <div id="ordersList"></div>
+    </div>
+    <script>
+        let drivers = [];
+        async function fetchDrivers() {
+            const res = await fetch('/api/drivers');
+            drivers = await res.json();
+        }
+        async function fetchOrders() {
+            const res = await fetch('/api/history');
+            return (await res.json()).filter(o => o.status === 'finished');
+        }
+        async function assignDriver(orderId, driverName) {
+            return await fetch(`/api/order/${orderId}/assign_driver`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ driver: driverName })
+            });
+        }
+        async function renderOrders() {
+            await fetchDrivers();
+            const orders = await fetchOrders();
+            const list = document.getElementById('ordersList');
+            if (orders.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:#a0a0a0;">No hay pedidos finalizados.</div>';
+                return;
+            }
+            list.innerHTML = orders.map(order => {
+                const orderCode = order.code || `P${String(order.id).padStart(3, '0')}`;
+                let driverSelect = `<select data-orderid="${order.id}" class="driver-select"><option value="">-- Asignar repartidor --</option>`;
+                drivers.forEach(driver => {
+                    driverSelect += `<option value="${driver.name}"${order.driver === driver.name ? ' selected' : ''}>${driver.name}</option>`;
+                });
+                driverSelect += '</select>';
+                return `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div>
+                                <div class="order-code">${orderCode}</div>
+                                <div class="order-customer">${order.customer}</div>
+                            </div>
+                            <div class="order-time">${order.timestamp.split(' ')[1]}</div>
+                        </div>
+                        <div class="order-items">
+                            ${Object.entries(order.items).map(([item, d]) => `<div class="order-item">${d.quantity}x ${item}</div>`).join('')}
+                        </div>
+                        ${order.notes ? `<div class="order-notes">📝 ${order.notes}</div>` : ''}
+                        <div class="order-total">$${order.total.toLocaleString()}</div>
+                        <div class="driver-row">
+                            ${driverSelect}
+                            ${order.driver ? `<span class="assigned-driver">Asignado a: ${order.driver}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.querySelectorAll('.driver-select').forEach(sel => {
+                sel.addEventListener('change', async e => {
+                    const orderId = e.target.getAttribute('data-orderid');
+                    const driver = e.target.value;
+                    if (driver) {
+                        const resp = await assignDriver(orderId, driver);
+                        if (resp && resp.ok) {
+                            renderOrders();
+                        } else {
+                            alert('Error al asignar repartidor');
+                        }
+                    }
+                });
+            });
+        }
+        renderOrders();
+
+        // Language toggle
+        const translations = {
+            es: {
+                menu: "🛒 Menú",
+                pedidos: "📋 Pedidos",
+                analytics: "📊 Análisis",
+                drivers: "🛵 Repartidores",
+                deliveries: "🚚 Entregas",
+                langBtn: "🌐 EN",
+                title: "Entregas - Asignar Repartidores"
+            },
+            en: {
+                menu: "🛒 Menu",
+                pedidos: "📋 Orders",
+                analytics: "📊 Analytics",
+                drivers: "🛵 Drivers",
+                deliveries: "🚚 Deliveries",
+                langBtn: "🌐 ES",
+                title: "Deliveries - Assign Drivers"
+            }
+        };
+
+        let currentLang = localStorage.getItem('lang') || 'es';
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'es' ? 'en' : 'es';
+            localStorage.setItem('lang', currentLang);
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            document.getElementById('langBtn').textContent = translations[currentLang].langBtn;
+            // Update navigation
+            document.querySelector('a[href="/"]').textContent = translations[currentLang].menu;
+            document.querySelector('a[href="/pedidos"]').textContent = translations[currentLang].pedidos;
+            document.querySelector('a[href="/analytics"]').textContent = translations[currentLang].analytics;
+            document.querySelector('a[href="/drivers"]').textContent = translations[currentLang].drivers;
+            document.querySelector('a[href="/deliveries"]').textContent = translations[currentLang].deliveries;
+            // Update title
+            document.querySelector('h1').textContent = translations[currentLang].title;
+        }
+
+        // Apply on load
+        applyLanguage();
+    </script>
+</body>
+</html>

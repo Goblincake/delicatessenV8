@@ -1,0 +1,145 @@
+<header>
+    <h1>🍗 Sistema de Pedidos - Rotisería</h1>
+    <div class="header-actions">
+        <a href="/" class="btn btn-secondary">🛒 Menú</a>
+        <a href="/pedidos" class="btn btn-secondary">📋 Pedidos</a>
+        <a href="/analytics" class="btn btn-secondary">📊 Análisis</a>
+        <a href="/drivers" class="btn btn-secondary">🛵 Repartidores</a>
+        <a href="/deliveries" class="btn btn-secondary">🚚 Entregas</a>
+        <button class="btn btn-secondary" onclick="toggleLanguage()" id="langBtn">🌐 EN</button>
+        {% if is_index %}
+        <button class="btn btn-secondary" onclick="showHistory()">📋 Historial</button>
+        <button id="clearAllBtn" class="btn btn-danger" onclick="clearAllOrders()">🗑️ Borrar Pedidos</button>
+        {% endif %}
+    </div>
+</header>
+<script>
+    const translations = {
+        es: {
+            menu: "🛒 Menú",
+            pedidos: "📋 Pedidos",
+            analytics: "📊 Análisis",
+            drivers: "🛵 Repartidores",
+            deliveries: "🚚 Entregas",
+            langBtn: "🌐 EN",
+            title: "🍗 Sistema de Pedidos - Rotisería",
+            history: "📋 Historial",
+            clearAll: "🗑️ Borrar Pedidos",
+            orderTitle: "Tu Pedido",
+            total: "Total",
+            customer: "Cliente",
+            notes: "Notas",
+            placeOrder: "Realizar Pedido",
+            clear: "Limpiar",
+            readyTitle: "🚚 Pedidos Listos para Entrega",
+            noReadyOrders: "No hay pedidos listos",
+            selectDriver: "-- Seleccionar Repartidor --",
+            assign: "Asignar",
+            selectAll: "Seleccionar Todos",
+            ready: "✔ Listo",
+            selectDriverToast: "Selecciona un repartidor",
+            selectOrderToast: "Selecciona al menos un pedido",
+            assignedToast: "pedidos asignados a",
+            completedToast: "Pedido completado",
+            unassignedToast: "Asignación removida",
+            complete: "Completar",
+            unassign: "Desasignar",
+            unassigned: "(sin asignar)"
+        },
+        en: {
+            menu: "🛒 Menu",
+            pedidos: "📋 Orders",
+            analytics: "📊 Analytics",
+            drivers: "🛵 Drivers",
+            deliveries: "🚚 Deliveries",
+            langBtn: "🌐 ES",
+            title: "🍗 Order System - Delicatessen",
+            history: "📋 History",
+            clearAll: "🗑️ Clear Orders",
+            orderTitle: "Your Order",
+            total: "Total",
+            customer: "Customer",
+            notes: "Notes",
+            placeOrder: "Place Order",
+            clear: "Clear",
+            readyTitle: "🚚 Orders Ready for Delivery",
+            noReadyOrders: "No orders ready",
+            selectDriver: "-- Select Driver --",
+            assign: "Assign",
+            selectAll: "Select All",
+            ready: "✔ Ready",
+            selectDriverToast: "Select a driver",
+            selectOrderToast: "Select at least one order",
+            assignedToast: "orders assigned to",
+            completedToast: "Order completed",
+            unassignedToast: "Assignment removed",
+            complete: "Complete",
+            unassign: "Unassign",
+            unassigned: "(unassigned)"
+        }
+    };
+
+    let currentLang = localStorage.getItem('lang') || 'es';
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'es' ? 'en' : 'es';
+        localStorage.setItem('lang', currentLang);
+        applyLanguage();
+    }
+
+    function applyLanguage() {
+        // Update header elements that exist on all pages
+        const langBtn = document.getElementById('langBtn');
+        if (langBtn) langBtn.textContent = translations[currentLang].langBtn;
+        const menuLink = document.querySelector('a[href="/"]');
+        if (menuLink) menuLink.textContent = translations[currentLang].menu;
+        const pedidosLink = document.querySelector('a[href="/pedidos"]');
+        if (pedidosLink) pedidosLink.textContent = translations[currentLang].pedidos;
+        const analyticsLink = document.querySelector('a[href="/analytics"]');
+        if (analyticsLink) analyticsLink.textContent = translations[currentLang].analytics;
+        const driversLink = document.querySelector('a[href="/drivers"]');
+        if (driversLink) driversLink.textContent = translations[currentLang].drivers;
+        const deliveriesLink = document.querySelector('a[href="/deliveries"]');
+        if (deliveriesLink) deliveriesLink.textContent = translations[currentLang].deliveries;
+        const h1 = document.querySelector('h1');
+        if (h1) h1.textContent = translations[currentLang].title;
+        const clearBtn = document.getElementById('clearAllBtn');
+        if (clearBtn) clearBtn.textContent = translations[currentLang].clearAll;
+        const historyBtn = document.querySelector('button[onclick="showHistory()"]');
+        if (historyBtn) historyBtn.textContent = translations[currentLang].history;
+        // Update page-specific elements only if they exist
+        const orderTitle = document.getElementById('orderTitle');
+        if (orderTitle) orderTitle.textContent = translations[currentLang].orderTitle;
+        const totalLabel = document.getElementById('totalLabel');
+        if (totalLabel) totalLabel.textContent = translations[currentLang].total;
+        const customerLabel = document.getElementById('customerLabel');
+        if (customerLabel) customerLabel.textContent = translations[currentLang].customer;
+        const notesLabel = document.getElementById('notesLabel');
+        if (notesLabel) notesLabel.textContent = translations[currentLang].notes;
+        const placeOrderBtn = document.getElementById('placeOrderBtn');
+        if (placeOrderBtn) placeOrderBtn.textContent = translations[currentLang].placeOrder;
+        const clearBtn2 = document.getElementById('clearBtn');
+        if (clearBtn2) clearBtn2.textContent = translations[currentLang].clear;
+        const readyTitle = document.getElementById('readyTitle');
+        if (readyTitle) readyTitle.textContent = translations[currentLang].readyTitle;
+        // Update driver assignment elements
+        const bulkAssignBtn = document.getElementById('bulkAssignBtn');
+        if (bulkAssignBtn) bulkAssignBtn.textContent = translations[currentLang].assign;
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        if (selectAllBtn) selectAllBtn.textContent = translations[currentLang].selectAll;
+        const bulkDriverSelect = document.getElementById('bulkDriverSelect');
+        if (bulkDriverSelect && bulkDriverSelect.options[0]) bulkDriverSelect.options[0].text = translations[currentLang].selectDriver;
+        // Refresh ready orders if function exists
+        if (typeof loadReadyOrders === 'function') loadReadyOrders();
+    }
+
+    // Apply language on load
+    window.addEventListener('DOMContentLoaded', applyLanguage);
+
+    function escapeHtml(text) {
+        if (text == null) return '';
+        const d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+    }
+</script>

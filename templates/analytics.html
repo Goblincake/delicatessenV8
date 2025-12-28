@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis - Rotisería</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #1e1e1e;
+            --bg-secondary: #2d2d2d;
+            --bg-card: #333333;
+            --fg: #e0e0e0;
+            --fg-muted: #a0a0a0;
+            --accent: #0e639c;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --border: #444444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        header {
+            background-color: var(--bg-secondary);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-card);
+            color: var(--fg);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .stat-card {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1.25rem;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card h3 {
+            font-size: 0.85rem;
+            color: var(--fg-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .chart-card {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .chart-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--fg);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Date Filter */
+        .filters {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .filters h3 {
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filter-row label {
+            font-size: 0.9rem;
+            color: var(--fg-muted);
+        }
+
+        .filter-row input {
+            padding: 0.5rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--fg);
+            font-size: 0.9rem;
+        }
+
+        .filter-row input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--fg-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include '_header.html' %}
+
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 data-translate="totalOrders">Pedidos Totales</h3>
+                <div class="value" id="totalOrders">0</div>
+            </div>
+            <div class="stat-card">
+                <h3 data-translate="totalRevenue">Ingresos Totales</h3>
+                <div class="value" id="totalRevenue">$0</div>
+            </div>
+            <div class="stat-card">
+                <h3 data-translate="avgOrderValue">Valor Promedio</h3>
+                <div class="value" id="avgOrderValue">$0</div>
+            </div>
+            <div class="stat-card">
+                <h3 data-translate="todayOrders">Pedidos Hoy</h3>
+                <div class="value" id="todayOrders">0</div>
+            </div>
+            <div class="stat-card">
+                <h3 data-translate="totalCosts">Costos Totales</h3>
+                <div class="value" id="totalCosts">$0</div>
+            </div>
+            <div class="stat-card">
+                <h3 data-translate="totalProfits">Ganancias Totales</h3>
+                <div class="value" id="totalProfits">$0</div>
+            </div>
+            <div class="stat-card">
+                <h3 data-translate="profitMargin">Margen de Ganancia</h3>
+                <div class="value" id="profitMargin">0%</div>
+            </div>
+            <div class="stat-card">
+                <h3 data-translate="avgProfitPerOrder">Ganancia Promedio x Pedido</h3>
+                <div class="value" id="avgProfitPerOrder">$0</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <h3 data-translate="dateFilters">📅 Filtros de Fecha</h3>
+            <div class="filter-row">
+                <label data-translate="from" for="startDate">Desde:</label>
+                <input type="date" id="startDate" autocomplete="off">
+                <label data-translate="to" for="endDate">Hasta:</label>
+                <input type="date" id="endDate" autocomplete="off">
+                <button type="button" class="btn btn-secondary" id="applyFiltersBtn" data-translate="apply">🔍 Aplicar</button>
+                <button type="button" class="btn btn-secondary" id="resetFiltersBtn" data-translate="reset">🔄 Reset</button>
+            </div>
+            <div class="filter-row">
+                <label>
+                    <input type="checkbox" id="useDummyData">
+                    <span data-translate="useDummyData">📊 Usar Datos de Prueba (300 pedidos/mes)</span>
+                </label>
+            </div>
+            <div class="filter-row" style="margin-top:0.5rem; align-items:center;">
+                <label>
+                    <input type="checkbox" id="autoRefreshToggle">
+                    <span data-translate="autoRefresh">🔁 Auto-refresh</span>
+                </label>
+                <button type="button" class="btn btn-secondary" id="refreshBtn" style="margin-left:0.75rem;" data-translate="refreshNow">⟳ Refrescar</button>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3 data-translate="dailySales">💰 Ventas Diarias</h3>
+                <div class="chart-container">
+                    <canvas id="dailySalesChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3 data-translate="dailyOrders">📈 Pedidos Diarios</h3>
+                <div class="chart-container">
+                    <canvas id="dailyOrdersChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3 data-translate="costsVsProfits">💸 Costos vs Ganancias Diarias</h3>
+                <div class="chart-container">
+                    <canvas id="dailyCostsProfitsChart"></canvas>
+                </div>
+            </div>
+
+
+            <div class="chart-card">
+                <h3 data-translate="hourlyOrders">🕐 Pedidos por Hora</h3>
+                <div class="chart-container">
+                    <canvas id="hourlyOrdersChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3 data-translate="popularItems">🍽️ Productos Más Vendidos</h3>
+                <div class="chart-container">
+                    <canvas id="popularItemsChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Chart Modal (for enlarging charts) -->
+    <div id="chartModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:2000;">
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;max-width:90%;max-height:90%;padding:1rem;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                <div id="modalChartTitle" style="font-weight:600;color:var(--fg);"></div>
+                <button id="closeChartModal" class="btn btn-secondary">Cerrar</button>
+            </div>
+            <div id="modalCanvasHolder" style="width:1100px;max-width:calc(100vw - 4rem);height:600px;max-height:calc(100vh - 6rem);">
+                <!-- canvas will be moved here when modal opens -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let analyticsData = null;
+        let dailySalesChart, dailyOrdersChart, hourlyOrdersChart, popularItemsChart;
+        let dailyCostsProfitsChart;
+        const chartInstances = {};
+
+        function getFreshCtx(canvasId) {
+            const el = document.getElementById(canvasId);
+            if (!el) return null;
+            // Prefer reusing the existing canvas context. We ensure charts are destroyed before reuse.
+            return el.getContext('2d');
+        }
+
+        // Extend translations with analytics-specific terms
+        Object.assign(translations.es, {
+            title: "📊 Análisis de Ventas",
+            // Stats cards
+            totalOrders: "Pedidos Totales",
+            totalRevenue: "Ingresos Totales",
+            avgOrderValue: "Valor Promedio",
+            todayOrders: "Pedidos Hoy",
+            totalCosts: "Costos Totales",
+            totalProfits: "Ganancias Totales",
+            profitMargin: "Margen de Ganancia",
+            avgProfitPerOrder: "Ganancia Promedio x Pedido",
+            // Filters
+            dateFilters: "📅 Filtros de Fecha",
+            from: "Desde:",
+            to: "Hasta:",
+            apply: "🔍 Aplicar",
+            reset: "🔄 Reset",
+            useDummyData: "📊 Usar Datos de Prueba (300 pedidos/mes)",
+            // Chart titles
+            dailySales: "💰 Ventas Diarias",
+            dailyOrders: "📈 Pedidos Diarios",
+            costsVsProfits: "💸 Costos vs Ganancias Diarias",
+            profitMarginChart: "📊 Margen de Ganancia Diario",
+            hourlyOrders: "🕐 Pedidos por Hora",
+            popularItems: "🍽️ Productos Más Vendidos",
+            itemCosts: "💰 Costos por Producto",
+            itemMargins: "📈 Margen de Ganancia por Producto",
+            // Chart labels
+            costs: "Costos",
+            profits: "Ganancias",
+            profitMarginLabel: "Margen de Ganancia (%)",
+            totalCostsLabel: "Costos Totales",
+            profitMarginPercent: "Margen de Ganancia (%)",
+            dailySalesLabel: "Ventas Diarias ($)",
+            dailyOrdersLabel: "Pedidos Diarios",
+            hourlyOrdersLabel: "Pedidos por Hora"
+            ,
+            autoRefresh: "🔁 Auto-refresh",
+            refreshNow: "⟳ Refrescar"
+        });
+
+        Object.assign(translations.en, {
+            title: "📊 Sales Analytics",
+            // Stats cards
+            totalOrders: "Total Orders",
+            totalRevenue: "Total Revenue",
+            avgOrderValue: "Average Value",
+            todayOrders: "Orders Today",
+            totalCosts: "Total Costs",
+            totalProfits: "Total Profits",
+            profitMargin: "Profit Margin",
+            avgProfitPerOrder: "Avg Profit per Order",
+            // Filters
+            dateFilters: "📅 Date Filters",
+            from: "From:",
+            to: "To:",
+            apply: "🔍 Apply",
+            reset: "🔄 Reset",
+            useDummyData: "📊 Use Test Data (300 orders/month)",
+            // Chart titles
+            dailySales: "💰 Daily Sales",
+            dailyOrders: "📈 Daily Orders",
+            costsVsProfits: "💸 Daily Costs vs Profits",
+            profitMarginChart: "📊 Daily Profit Margin",
+            hourlyOrders: "🕐 Orders by Hour",
+            popularItems: "🍽️ Best Selling Items",
+            itemCosts: "💰 Costs by Item",
+            itemMargins: "📈 Profit Margin by Item",
+            // Chart labels
+            costs: "Costs",
+            profits: "Profits",
+            profitMarginLabel: "Profit Margin (%)",
+            totalCostsLabel: "Total Costs",
+            profitMarginPercent: "Profit Margin (%)",
+            dailySalesLabel: "Daily Sales ($)",
+            dailyOrdersLabel: "Daily Orders",
+            hourlyOrdersLabel: "Orders by Hour"
+            ,
+            autoRefresh: "🔁 Auto-refresh",
+            refreshNow: "⟳ Refresh Now"
+        });
+
+        const REFRESH_INTERVAL = 60000; // milliseconds (default 60s)
+        let refreshTimerId = null;
+        let refreshActive = false;
+        let isLoadingAnalytics = false;
+
+        async function autoRefreshTick() {
+            if (!refreshActive) return;
+            // Skip if page is not visible or user interacting with date inputs
+            if (document.hidden) {
+                // page not visible, postpone
+                refreshTimerId = setTimeout(autoRefreshTick, REFRESH_INTERVAL);
+                return;
+            }
+            // Skip if user interacting with date inputs
+            const startFocused = document.activeElement && document.activeElement.id === 'startDate';
+            const endFocused = document.activeElement && document.activeElement.id === 'endDate';
+            if (startFocused || endFocused) {
+                // schedule next tick
+                refreshTimerId = setTimeout(autoRefreshTick, REFRESH_INTERVAL);
+                return;
+            }
+
+            if (isLoadingAnalytics) {
+                // Previous tick still running; avoid overlap
+                console.debug('autoRefreshTick: previous load still running, skipping this tick');
+                refreshTimerId = setTimeout(autoRefreshTick, REFRESH_INTERVAL);
+                return;
+            }
+
+            try {
+                isLoadingAnalytics = true;
+                await loadAnalytics();
+            } catch (e) {
+                console.error('autoRefreshTick loadAnalytics error', e);
+            } finally {
+                isLoadingAnalytics = false;
+                // schedule next tick
+                refreshTimerId = setTimeout(autoRefreshTick, REFRESH_INTERVAL);
+            }
+        }
+
+        function startAutoRefresh() {
+            if (refreshActive) return;
+            // Do not start auto-refresh while using dummy data
+            const useDummyEl = document.getElementById && document.getElementById('useDummyData');
+            if (useDummyEl && useDummyEl.checked) {
+                console.debug('startAutoRefresh: dummy mode active, not starting');
+                return;
+            }
+            refreshActive = true;
+            console.debug('startAutoRefresh');
+            // schedule first tick after interval to avoid immediate duplicate load
+            refreshTimerId = setTimeout(autoRefreshTick, REFRESH_INTERVAL);
+        }
+
+        function stopAutoRefresh() {
+            if (!refreshActive) return;
+            refreshActive = false;
+            console.debug('stopAutoRefresh');
+            if (refreshTimerId) {
+                clearTimeout(refreshTimerId);
+                refreshTimerId = null;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAnalytics();
+
+            // Restore auto-refresh preference (default OFF)
+            const storedAuto = localStorage.getItem('analytics.autoRefresh') === 'true';
+            const autoEl = document.getElementById('autoRefreshToggle');
+            if (autoEl) {
+                autoEl.checked = storedAuto;
+                autoEl.addEventListener('change', (e) => {
+                    const enabled = !!e.target.checked;
+                    localStorage.setItem('analytics.autoRefresh', enabled ? 'true' : 'false');
+                    if (enabled) startAutoRefresh(); else stopAutoRefresh();
+                });
+            }
+
+            // Start auto-refresh only if user enabled it
+            if (storedAuto) startAutoRefresh();
+
+            // Add event listeners for buttons and checkbox
+            document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
+            document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+            document.getElementById('useDummyData').addEventListener('change', toggleDummyData);
+            const refreshBtn = document.getElementById('refreshBtn');
+            if (refreshBtn) refreshBtn.addEventListener('click', () => { loadAnalytics(); });
+            enableDatePickers();
+
+            // Pause auto-refresh while interacting with date inputs
+            const start = document.getElementById('startDate');
+            const end = document.getElementById('endDate');
+            if (start && end) {
+                ['focus', 'mousedown', 'touchstart'].forEach(evt => {
+                    start.addEventListener(evt, stopAutoRefresh);
+                    end.addEventListener(evt, stopAutoRefresh);
+                });
+                ['blur', 'mouseup', 'touchend'].forEach(evt => {
+                    start.addEventListener(evt, () => { setTimeout(startAutoRefresh, 500); });
+                    end.addEventListener(evt, () => { setTimeout(startAutoRefresh, 500); });
+                });
+            }
+        });
+
+        function enableDatePickers() {
+            const start = document.getElementById('startDate');
+            const end = document.getElementById('endDate');
+            if (!start || !end) return;
+
+            const openPicker = (el) => {
+                try {
+                    if (typeof el.showPicker === 'function') {
+                        el.showPicker();
+                    } else {
+                        el.focus();
+                    }
+                } catch (e) {
+                    // Some browsers may throw when calling showPicker; fallback to focus
+                    el.focus();
+                }
+            };
+
+            // If labels have for=, clicking them will focus; also explicitly open picker when label clicked
+            const startLabel = document.querySelector('label[for="startDate"]');
+            const endLabel = document.querySelector('label[for="endDate"]');
+            if (startLabel) startLabel.addEventListener('click', (e) => { e.preventDefault(); openPicker(start); });
+            if (endLabel) endLabel.addEventListener('click', (e) => { e.preventDefault(); openPicker(end); });
+
+            // Also open picker when input itself is clicked (helps when focus doesn't show UI)
+            start.addEventListener('click', () => openPicker(start));
+            end.addEventListener('click', () => openPicker(end));
+        }
+
+        let lastAnalyticsLoadTs = 0;
+        async function loadAnalytics() {
+            // If user opted to use dummy data, do not fetch from server
+            const useDummyEl = document.getElementById && document.getElementById('useDummyData');
+            if (useDummyEl && useDummyEl.checked) {
+                console.debug('loadAnalytics: dummy mode active, skipping fetch');
+                return;
+            }
+
+            const now = Date.now();
+            // Throttle rapid duplicate calls (extensions or multiple timers may fire)
+            if (now - lastAnalyticsLoadTs < 1200) {
+                console.debug('loadAnalytics: skipping duplicate call (throttle)');
+                return;
+            }
+            lastAnalyticsLoadTs = now;
+
+            if (isLoadingAnalytics) {
+                console.debug('loadAnalytics: previous load in progress, skipping');
+                return;
+            }
+
+            console.log('Loading analytics');
+            console.trace('loadAnalytics trace');
+            try {
+                isLoadingAnalytics = true;
+                const response = await fetch('/api/analytics');
+                console.log('Response status:', response.status);
+                analyticsData = await response.json();
+
+                updateStats();
+                createCharts();
+
+                // Set current date as default if not already set
+                if (!document.getElementById('startDate').value) {
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('startDate').value = today;
+                    document.getElementById('endDate').value = today;
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            } finally {
+                isLoadingAnalytics = false;
+            }
+        }
+
+        function toggleDummyData() {
+            console.debug('toggleDummyData called', new Date().toISOString());
+            const useDummy = document.getElementById('useDummyData').checked;
+            if (useDummy) {
+                // Use generated dummy data directly — do not trigger fetch
+                analyticsData = generateDummyData();
+                updateStats();
+                createCharts();
+                // Stop auto-refresh while in dummy mode
+                stopAutoRefresh();
+            } else {
+                // Switch back to live data — resume auto-refresh if user preference enabled
+                const storedAuto = localStorage.getItem('analytics.autoRefresh') === 'true';
+                if (storedAuto) startAutoRefresh();
+                loadAnalytics();
+            }
+        }
+
+        // Detect real page unloads (navigations / hard reloads)
+        window.addEventListener('beforeunload', (e) => {
+            console.warn('Page beforeunload fired', e);
+        });
+
+        function generateDummyData() {
+            const today = new Date();
+            const dummyData = {
+                total_orders: 312,
+                total_revenue: 18750,
+                avg_order_value: 60.1,
+                total_costs: 11250,
+                total_profits: 7500,
+                profit_margin: 40.0,
+                avg_profit_per_order: 24.0,
+                daily_sales: [],
+                daily_orders: [],
+                daily_costs: [],
+                daily_profits: [],
+                hourly_orders: [],
+                popular_items: [],
+                item_costs: [],
+                item_margins: []
+            };
+
+            // Generate data for the last 30 days
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                // Random but realistic daily data
+                const dailyOrders = Math.floor(Math.random() * 15) + 5; // 5-20 orders per day
+                const avgOrderValue = 55 + Math.random() * 15; // $55-70 per order
+                const dailyRevenue = dailyOrders * avgOrderValue;
+                const dailyCosts = dailyRevenue * (0.55 + Math.random() * 0.15); // 55-70% cost
+                const dailyProfits = dailyRevenue - dailyCosts;
+                
+                dummyData.daily_sales.push([dateStr, Math.round(dailyRevenue)]);
+                dummyData.daily_orders.push([dateStr, dailyOrders]);
+                dummyData.daily_costs.push([dateStr, Math.round(dailyCosts)]);
+                dummyData.daily_profits.push([dateStr, Math.round(dailyProfits)]);
+            }
+
+            // Generate hourly orders (24 hours)
+            for (let hour = 0; hour < 24; hour++) {
+                let ordersPerHour;
+                if (hour >= 11 && hour <= 14) { // Lunch rush
+                    ordersPerHour = Math.floor(Math.random() * 20) + 15; // 15-35 orders
+                } else if (hour >= 18 && hour <= 21) { // Dinner rush
+                    ordersPerHour = Math.floor(Math.random() * 25) + 20; // 20-45 orders
+                } else if (hour >= 7 && hour <= 10) { // Morning
+                    ordersPerHour = Math.floor(Math.random() * 8) + 2; // 2-10 orders
+                } else {
+                    ordersPerHour = Math.floor(Math.random() * 5) + 1; // 1-6 orders
+                }
+                dummyData.hourly_orders.push([hour, ordersPerHour]);
+            }
+
+            // Popular items (top 10 items)
+            const menuItems = [
+                "Pollo con Papas", "Milanesa con Ensalada", "Hamburguesa Completa", 
+                "Pizza Individual", "Empanadas (6)", "Asado para 2", "Sushi Rolls",
+                "Pasta Alfredo", "Ensalada César", "Tacos Mexicanos"
+            ];
+            
+            menuItems.forEach((item, index) => {
+                const orders = 312 - (index * 25) + Math.floor(Math.random() * 20); // Decreasing popularity
+                dummyData.popular_items.push([item, orders]);
+            });
+
+            // Item costs and margins
+            menuItems.forEach((item, index) => {
+                const itemPrice = 45 + (index * 5) + Math.random() * 20; // $45-140
+                const itemCost = itemPrice * (0.4 + Math.random() * 0.3); // 40-70% cost
+                const totalCost = itemCost * dummyData.popular_items[index][1];
+                const margin = ((itemPrice - itemCost) / itemPrice) * 100;
+                
+                dummyData.item_costs.push([item, Math.round(totalCost)]);
+                dummyData.item_margins.push([item, Math.round(margin * 10) / 10]); // 1 decimal
+            });
+
+            return dummyData;
+        }
+
+        function updateStats() {
+            document.getElementById('totalOrders').textContent = analyticsData.total_orders;
+            document.getElementById('totalRevenue').textContent = `$${analyticsData.total_revenue.toLocaleString()}`;
+            document.getElementById('avgOrderValue').textContent = `$${analyticsData.avg_order_value.toLocaleString()}`;
+            document.getElementById('totalCosts').textContent = `$${analyticsData.total_costs.toLocaleString()}`;
+            document.getElementById('totalProfits').textContent = `$${analyticsData.total_profits.toLocaleString()}`;
+            document.getElementById('profitMargin').textContent = `${analyticsData.profit_margin}%`;
+            document.getElementById('avgProfitPerOrder').textContent = `$${analyticsData.avg_profit_per_order.toLocaleString()}`;
+
+            // Calculate today's orders
+            const today = new Date().toISOString().split('T')[0];
+            const todayOrders = analyticsData.daily_orders.find(([date]) => date === today);
+            document.getElementById('todayOrders').textContent = todayOrders ? todayOrders[1] : 0;
+        }
+
+        function createCharts() {
+            try {
+            // Daily Sales Chart
+            const dailySalesCtx = getFreshCtx('dailySalesChart');
+            if (chartInstances['dailySalesChart']) { try { chartInstances['dailySalesChart'].destroy(); } catch(e){ console.debug('destroy dailySalesChart error', e); } }
+            try {
+                chartInstances['dailySalesChart'] = new Chart(dailySalesCtx, {
+                type: 'line',
+                data: {
+                    labels: analyticsData.daily_sales.map(([date]) => formatDate(date)),
+                    datasets: [{
+                        label: translations[currentLang].dailySalesLabel,
+                        data: analyticsData.daily_sales.map(([, sales]) => sales),
+                        borderColor: 'var(--success)',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => `$${value.toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+                });
+            } catch (err) { console.error('Failed to create dailySalesChart', err); }
+
+            // Daily Orders Chart
+            const dailyOrdersCtx = getFreshCtx('dailyOrdersChart');
+            if (chartInstances['dailyOrdersChart']) { try { chartInstances['dailyOrdersChart'].destroy(); } catch(e){ console.debug('destroy dailyOrdersChart error', e); } }
+            try {
+                chartInstances['dailyOrdersChart'] = new Chart(dailyOrdersCtx, {
+                type: 'bar',
+                data: {
+                    labels: analyticsData.daily_orders.map(([date]) => formatDate(date)),
+                    datasets: [{
+                        label: translations[currentLang].dailyOrdersLabel,
+                        data: analyticsData.daily_orders.map(([, count]) => count),
+                        backgroundColor: 'var(--accent)',
+                        borderColor: 'var(--accent)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+                });
+            } catch (err) { console.error('Failed to create dailyOrdersChart', err); }
+
+            // Hourly Orders Chart (fixed hourly axis 06:00 - 24:00, 1-hour granularity)
+            const hourlyOrdersCtx = getFreshCtx('hourlyOrdersChart');
+            if (chartInstances['hourlyOrdersChart']) { try { chartInstances['hourlyOrdersChart'].destroy(); } catch(e){ console.debug('destroy hourlyOrdersChart error', e); } }
+            try {
+                // Build labels 06:00 .. 24:00
+                const hourLabels = [];
+                for (let h = 6; h <= 24; h++) {
+                    hourLabels.push((h < 10 ? '0' + h : h) + ':00');
+                }
+
+                // Map incoming hourly data (array of [hour, count]) to a lookup
+                const hourMap = {};
+                (analyticsData.hourly_orders || []).forEach(([hour, count]) => { hourMap[hour] = count; });
+
+                // Build counts array matching labels; treat 24:00 as hour 0 (midnight) if present
+                const hourCounts = [];
+                for (let h = 6; h <= 24; h++) {
+                    if (h === 24) {
+                        hourCounts.push(hourMap[0] || 0);
+                    } else {
+                        hourCounts.push(hourMap[h] || 0);
+                    }
+                }
+
+                chartInstances['hourlyOrdersChart'] = new Chart(hourlyOrdersCtx, {
+                type: 'bar',
+                data: {
+                    labels: hourLabels,
+                    datasets: [{
+                        label: translations[currentLang].hourlyOrdersLabel,
+                        data: hourCounts,
+                        backgroundColor: 'var(--warning)',
+                        borderColor: 'var(--warning)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            // show every hour label
+                            ticks: { autoSkip: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+                });
+            } catch (err) { console.error('Failed to create hourlyOrdersChart', err); }
+
+            // Popular Items Chart
+            const popularItemsCtx = getFreshCtx('popularItemsChart');
+            if (chartInstances['popularItemsChart']) { try { chartInstances['popularItemsChart'].destroy(); } catch(e){ console.debug('destroy popularItemsChart error', e); } }
+            try {
+                chartInstances['popularItemsChart'] = new Chart(popularItemsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: analyticsData.popular_items.map(([item]) => item.length > 20 ? item.substring(0, 20) + '...' : item),
+                    datasets: [{
+                        data: analyticsData.popular_items.map(([, count]) => count),
+                        backgroundColor: [
+                            'var(--accent)', 'var(--success)', 'var(--warning)', 'var(--danger)',
+                            '#5e35b1', '#26a69a', '#ab47bc', '#8d6e63',
+                            '#78909c', '#7cb342'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 11 }
+                            }
+                        }
+                    }
+                }
+                });
+            } catch (err) { console.error('Failed to create popularItemsChart', err); }
+
+            // Daily Costs vs Profits Chart
+            const dailyCostsProfitsCtx = getFreshCtx('dailyCostsProfitsChart');
+            if (chartInstances['dailyCostsProfitsChart']) { try { chartInstances['dailyCostsProfitsChart'].destroy(); } catch(e){ console.debug('destroy dailyCostsProfitsChart error', e); } }
+            try {
+                chartInstances['dailyCostsProfitsChart'] = new Chart(dailyCostsProfitsCtx, {
+                type: 'bar',
+                data: {
+                    labels: analyticsData.daily_costs.map(([date]) => formatDate(date)),
+                    datasets: [{
+                        label: translations[currentLang].costs,
+                        data: analyticsData.daily_costs.map(([, cost]) => cost),
+                        backgroundColor: 'var(--danger)',
+                        borderColor: 'var(--danger)',
+                        borderWidth: 1
+                    }, {
+                        label: translations[currentLang].profits,
+                        data: analyticsData.daily_profits.map(([, profit]) => profit),
+                        backgroundColor: 'var(--success)',
+                        borderColor: 'var(--success)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => `$${value.toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+                });
+            } catch (err) { console.error('Failed to create dailyCostsProfitsChart', err); }
+
+            // (Removed legacy per-item and profit-margin charts)
+            } catch (err) {
+                console.error('Error in createCharts:', err);
+            }
+
+            // Keep legacy globals in sync for existing code (filters/reset rely on these)
+            dailySalesChart = chartInstances['dailySalesChart'] || null;
+            dailyOrdersChart = chartInstances['dailyOrdersChart'] || null;
+            hourlyOrdersChart = chartInstances['hourlyOrdersChart'] || null;
+            popularItemsChart = chartInstances['popularItemsChart'] || null;
+            dailyCostsProfitsChart = chartInstances['dailyCostsProfitsChart'] || null;
+        }
+
+        function formatDate(dateStr) {
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}`;
+        }
+
+        function applyFilters() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (!startDate || !endDate) {
+                alert('Por favor selecciona ambas fechas');
+                return;
+            }
+
+            // Filter data based on date range
+            const filteredSales = analyticsData.daily_sales.filter(([date]) =>
+                date >= startDate && date <= endDate
+            );
+            const filteredOrders = analyticsData.daily_orders.filter(([date]) =>
+                date >= startDate && date <= endDate
+            );
+            const filteredCosts = analyticsData.daily_costs.filter(([date]) =>
+                date >= startDate && date <= endDate
+            );
+            const filteredProfits = analyticsData.daily_profits.filter(([date]) =>
+                date >= startDate && date <= endDate
+            );
+
+            // Update charts with filtered data
+            dailySalesChart.data.labels = filteredSales.map(([date]) => formatDate(date));
+            dailySalesChart.data.datasets[0].data = filteredSales.map(([, sales]) => sales);
+            dailySalesChart.update();
+
+            dailyOrdersChart.data.labels = filteredOrders.map(([date]) => formatDate(date));
+            dailyOrdersChart.data.datasets[0].data = filteredOrders.map(([, count]) => count);
+            dailyOrdersChart.update();
+
+            dailyCostsProfitsChart.data.labels = filteredCosts.map(([date]) => formatDate(date));
+            dailyCostsProfitsChart.data.datasets[0].data = filteredCosts.map(([, cost]) => cost);
+            dailyCostsProfitsChart.data.datasets[1].data = filteredProfits.map(([, profit]) => profit);
+            dailyCostsProfitsChart.update();
+
+            // (profit margin chart removed)
+        }
+
+        // Modal logic: move canvas into modal to preserve Chart instance and interactivity
+        let modalOpenChartId = null;
+        function openChartModal(chartId, title) {
+            if (modalOpenChartId) return;
+            const chart = chartInstances[chartId];
+            const canvas = document.getElementById(chartId);
+            if (!chart || !canvas) return;
+
+            // store original parent and nextSibling for restore
+            canvas._origParent = canvas.parentNode;
+            canvas._origNext = canvas.nextSibling;
+
+            const holder = document.getElementById('modalCanvasHolder');
+            const modal = document.getElementById('chartModal');
+            const titleEl = document.getElementById('modalChartTitle');
+            titleEl.textContent = title || '';
+
+            // move canvas into modal
+            holder.appendChild(canvas);
+            modal.style.display = 'flex';
+            modalOpenChartId = chartId;
+
+            // Resize chart to fit modal
+            try { chart.resize(); } catch (e) { console.debug('modal resize error', e); }
+        }
+
+        function closeChartModal() {
+            if (!modalOpenChartId) return;
+            const canvas = document.getElementById(modalOpenChartId);
+            const chart = chartInstances[modalOpenChartId];
+            const modal = document.getElementById('chartModal');
+            if (!canvas) { modal.style.display = 'none'; modalOpenChartId = null; return; }
+
+            // restore canvas to original parent
+            const origParent = canvas._origParent;
+            const origNext = canvas._origNext;
+            if (origParent) {
+                if (origNext) origParent.insertBefore(canvas, origNext); else origParent.appendChild(canvas);
+            }
+
+            // hide modal
+            modal.style.display = 'none';
+            modalOpenChartId = null;
+
+            // Resize chart back
+            try { if (chart) chart.resize(); } catch (e) { console.debug('modal restore resize error', e); }
+        }
+
+        // Wire modal close button
+        document.addEventListener('DOMContentLoaded', () => {
+            const closeBtn = document.getElementById('closeChartModal');
+            if (closeBtn) closeBtn.addEventListener('click', closeChartModal);
+
+            // Clicking outside content closes modal
+            const modal = document.getElementById('chartModal');
+            if (modal) modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeChartModal();
+            });
+
+            // Add click handlers to chart containers to open modal
+            ['dailySalesChart','dailyOrdersChart','dailyCostsProfitsChart','hourlyOrdersChart','popularItemsChart'].forEach(id => {
+                const canvas = document.getElementById(id);
+                if (!canvas) return;
+                const container = canvas.closest('.chart-container');
+                if (!container) return;
+                container.style.cursor = 'zoom-in';
+                container.addEventListener('click', (e) => {
+                    // allow interactions (tooltips) to proceed if chart handles it; only open modal on background click or explicit canvas click without dragging
+                    openChartModal(id, document.querySelector('[data-translate]') ? '' : '');
+                });
+            });
+        });
+
+        function resetFilters() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = today;
+            document.getElementById('endDate').value = today;
+
+            // Reset to full data
+            dailySalesChart.data.labels = analyticsData.daily_sales.map(([date]) => formatDate(date));
+            dailySalesChart.data.datasets[0].data = analyticsData.daily_sales.map(([, sales]) => sales);
+            dailySalesChart.update();
+
+            dailyOrdersChart.data.labels = analyticsData.daily_orders.map(([date]) => formatDate(date));
+            dailyOrdersChart.data.datasets[0].data = analyticsData.daily_orders.map(([, count]) => count);
+            dailyOrdersChart.update();
+
+            dailyCostsProfitsChart.data.labels = analyticsData.daily_costs.map(([date]) => formatDate(date));
+            dailyCostsProfitsChart.data.datasets[0].data = analyticsData.daily_costs.map(([, cost]) => cost);
+            dailyCostsProfitsChart.data.datasets[1].data = analyticsData.daily_profits.map(([, profit]) => profit);
+            dailyCostsProfitsChart.update();
+
+            // (profit margin chart removed)
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'es' ? 'en' : 'es';
+            localStorage.setItem('lang', currentLang);
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            document.getElementById('langBtn').textContent = translations[currentLang].langBtn;
+            // Update navigation
+            document.querySelector('a[href="/"]').textContent = translations[currentLang].menu;
+            document.querySelector('a[href="/pedidos"]').textContent = translations[currentLang].pedidos;
+            document.querySelector('a[href="/analytics"]').textContent = translations[currentLang].analytics;
+            document.querySelector('a[href="/drivers"]').textContent = translations[currentLang].drivers;
+            document.querySelector('a[href="/deliveries"]').textContent = translations[currentLang].deliveries;
+            // Update title
+            document.querySelector('h1').textContent = translations[currentLang].title;
+            
+            // Update elements with data-translate attributes
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[currentLang][key]) {
+                    element.textContent = translations[currentLang][key];
+                }
+            });
+            
+            // Recreate charts if data is loaded
+            if (analyticsData) {
+                createCharts();
+            }
+        }
+
+        // Apply on load
+        applyLanguage();
+    </script>
+</body>
+</html>
