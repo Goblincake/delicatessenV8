@@ -1130,7 +1130,20 @@
                 if (!container) return;
                 container.style.cursor = 'zoom-in';
                 container.addEventListener('click', (e) => {
-                    // allow interactions (tooltips) to proceed if chart handles it; only open modal on background click or explicit canvas click without dragging
+                    // If the chart has elements at the click position, let the chart's own onClick handler deal with it
+                    const chart = chartInstances[id];
+                    try {
+                        if (chart && typeof chart.getElementsAtEventForMode === 'function') {
+                            const elems = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+                            if (elems && elems.length > 0) {
+                                // Chart handled click (e.g., bar/point) — do not open zoom modal
+                                return;
+                            }
+                        }
+                    } catch (err) {
+                        console.debug('chart interaction check failed', err);
+                    }
+                    // No chart element interacted — open zoom modal
                     openChartModal(id, document.querySelector('[data-translate]') ? '' : '');
                 });
             });
