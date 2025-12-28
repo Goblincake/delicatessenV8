@@ -692,6 +692,7 @@
                 daily_orders: [],
                 daily_costs: [],
                 daily_profits: [],
+                daily_breakdowns: [],
                 hourly_orders: [],
                 popular_items: [],
                 item_costs: [],
@@ -715,6 +716,21 @@
                 dummyData.daily_orders.push([dateStr, dailyOrders]);
                 dummyData.daily_costs.push([dateStr, Math.round(dailyCosts)]);
                 dummyData.daily_profits.push([dateStr, Math.round(dailyProfits)]);
+                // Build a reasonable breakdown for dummy data so the breakdown modal can display details
+                const rentPerDay = Math.round(2000 / 30);
+                const laborPerDay = Math.round(15 * 8);
+                const courierTotal = Math.round(dailyOrders * 5);
+                let productCogs = Math.round(dailyCosts - (rentPerDay + laborPerDay + courierTotal));
+                if (productCogs < 0) productCogs = Math.max(0, Math.round(dailyCosts * 0.6));
+                dummyData.daily_breakdowns.push([dateStr, {
+                    product_cogs: productCogs,
+                    rent: rentPerDay,
+                    labor: laborPerDay,
+                    courier: courierTotal,
+                    total_cost: Math.round(dailyCosts),
+                    profit: Math.round(dailyProfits),
+                    orders: dailyOrders
+                }]);
             }
 
             // Generate hourly orders (24 hours)
