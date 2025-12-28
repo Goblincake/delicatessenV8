@@ -284,25 +284,42 @@ def get_analytics():
     item_costs = {}
     item_profits = {}
     
-    # Cost per delivery (courier fee)
-    DELIVERY_COST = 300  # ARS per delivery
-    
+    # Read cost settings from query params (allow client to pass configuration)
+    try:
+        monthly_rent = float(request.args.get('monthly_rent', 2000))
+    except Exception:
+        monthly_rent = 2000.0
+    try:
+        courier_cost_per_order = float(request.args.get('courier_cost', 300))
+    except Exception:
+        courier_cost_per_order = 300.0
+    try:
+        hourly_wage = float(request.args.get('hourly_wage', 0))
+    except Exception:
+        hourly_wage = 0.0
+    try:
+        daily_hours = float(request.args.get('daily_hours', 8))
+    except Exception:
+        daily_hours = 8.0
+
+    # accumulate per-day intermediate values
     for order in history:
         if order.get('status') != 'completed':
             continue
         timestamp = order.get('timestamp', '1970-01-01 00:00:00')
         date = timestamp.split(' ')[0]
         hour = timestamp.split(' ')[1].split(':')[0]
-        
+
         daily_sales.setdefault(date, 0)
         daily_orders.setdefault(date, 0)
-        daily_costs.setdefault(date, 0)
-        daily_profits.setdefault(date, 0)
-        
+        # we'll accumulate product costs separately per day
+        daily_product_costs = {}
+        # increment revenue and order count
         total_revenue = order.get('total', 0)
-        total_cost = DELIVERY_COST  # Start with delivery cost
-        
-        # Calculate item costs
+
+        # Calculate item costs for this order and update global trackers
+        order_item_cost_total = 0
+        total_items_count = 0
         for item, details in order.get('items', {}).items():
             qty = 0
             if isinstance(details, dict):
@@ -312,36 +329,57 @@ def get_analytics():
                     qty = int(details)
                 except Exception:
                     qty = 0
-            
-            # Get cost from menu
+            total_items_count += qty
+
+            # Get cost from menu: prefer 'cost_price', fallback to 'cost'
             item_cost = 0
             for category, items in MENU_CATEGORIES.items():
                 if item in items:
                     if isinstance(items[item], dict):
-                        item_cost = items[item].get('cost', 0)
+                        item_cost = items[item].get('cost_price', items[item].get('cost', 0))
                     break
-            
-            total_cost += item_cost * qty
-            
+
+            order_item_cost_total += item_cost * qty
+
             # Track popular items
             popular_items.setdefault(item, 0)
             popular_items[item] += qty
-            
+
             # Track item costs and profits
             item_costs.setdefault(item, 0)
             item_costs[item] += item_cost * qty
+            # approximate revenue share for this item
+            try:
+                if isinstance(list(order.get('items', {}).values())[0], int):
+                    denom = sum(order.get('items', {}).values())
+                else:
+                    denom = sum(d.get('quantity', 0) for d in order.get('items', {}).values())
+            except Exception:
+                denom = max(total_items_count, 1)
+            item_revenue_share = (total_revenue / max(denom, 1)) * qty
             item_profits.setdefault(item, 0)
-            item_profits[item] += (total_revenue / max(sum(order.get('items', {}).values()) if isinstance(list(order.get('items', {}).values())[0], int) else sum(d.get('quantity', 0) for d in order.get('items', {}).values()), 1)) * qty - item_cost * qty
-        
-        profit = total_revenue - total_cost
-        
+            item_profits[item] += item_revenue_share - item_cost * qty
+
+        # Update daily aggregates
         daily_sales[date] += total_revenue
         daily_orders[date] += 1
-        daily_costs[date] += total_cost
-        daily_profits[date] += profit
-        
+        daily_costs.setdefault(date, 0)
+        # add product COGS and per-order delivery cost
+        daily_costs[date] += order_item_cost_total + courier_cost_per_order
+        daily_profits.setdefault(date, 0)
+        daily_profits[date] += total_revenue - (order_item_cost_total + courier_cost_per_order)
+
         hourly_orders.setdefault(hour, 0)
         hourly_orders[hour] += 1
+
+    # After processing orders, add fixed daily costs (rent, labor) to each day
+    rent_per_day = monthly_rent / 30.0
+    labor_per_day = hourly_wage * daily_hours
+    for date in list(daily_sales.keys()):
+        # add rent and labor once per day
+        daily_costs[date] = daily_costs.get(date, 0) + rent_per_day + labor_per_day
+        # recompute profit for the day
+        daily_profits[date] = daily_sales.get(date, 0) - daily_costs.get(date, 0)
     
     sorted_daily = sorted(daily_sales.items())
     sorted_hourly = sorted(hourly_orders.items())
