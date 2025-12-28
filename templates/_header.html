@@ -1,17 +1,17 @@
 <header>
-    <h1>🍗 Sistema de Pedidos - Rotisería</h1>
-    <div class="header-actions">
-        <a href="/" class="btn btn-secondary">🛒 Menú</a>
-        <a href="/pedidos" class="btn btn-secondary">📋 Pedidos</a>
-        <a href="/analytics" class="btn btn-secondary">📊 Análisis</a>
-        <a href="/drivers" class="btn btn-secondary">🛵 Repartidores</a>
-        <a href="/deliveries" class="btn btn-secondary">🚚 Entregas</a>
-        <button class="btn btn-secondary" onclick="toggleLanguage()" id="langBtn">🌐 EN</button>
+    <h1 data-i18n="title">🍗 Sistema de Pedidos - Rotisería</h1>
+    <nav class="header-actions" role="navigation" aria-label="Main navigation">
+        <a href="/" class="btn btn-secondary" data-i18n="menu">🛒 Menú</a>
+        <a href="/pedidos" class="btn btn-secondary" data-i18n="pedidos">📋 Pedidos</a>
+        <a href="/analytics" class="btn btn-secondary" data-i18n="analytics">📊 Análisis</a>
+        <a href="/drivers" class="btn btn-secondary" data-i18n="drivers">🛵 Repartidores</a>
+        <a href="/deliveries" class="btn btn-secondary" data-i18n="deliveries">🚚 Entregas</a>
+        <button class="btn btn-secondary" onclick="toggleLanguage()" id="langBtn" data-i18n="langBtn">🌐 EN</button>
         {% if is_index %}
-        <button class="btn btn-secondary" onclick="showHistory()">📋 Historial</button>
-        <button id="clearAllBtn" class="btn btn-danger" onclick="clearAllOrders()">🗑️ Borrar Pedidos</button>
+        <button class="btn btn-secondary" onclick="showHistory()" data-i18n="history">📋 Historial</button>
+        <button id="clearAllBtn" class="btn btn-danger" onclick="clearAllOrders()" data-i18n="clearAll">🗑️ Borrar Pedidos</button>
         {% endif %}
-    </div>
+    </nav>
 </header>
 <script>
     const translations = {
@@ -88,48 +88,34 @@
     }
 
     function applyLanguage() {
-        // Update header elements that exist on all pages
-        const langBtn = document.getElementById('langBtn');
-        if (langBtn) langBtn.textContent = translations[currentLang].langBtn;
-        const menuLink = document.querySelector('a[href="/"]');
-        if (menuLink) menuLink.textContent = translations[currentLang].menu;
-        const pedidosLink = document.querySelector('a[href="/pedidos"]');
-        if (pedidosLink) pedidosLink.textContent = translations[currentLang].pedidos;
-        const analyticsLink = document.querySelector('a[href="/analytics"]');
-        if (analyticsLink) analyticsLink.textContent = translations[currentLang].analytics;
-        const driversLink = document.querySelector('a[href="/drivers"]');
-        if (driversLink) driversLink.textContent = translations[currentLang].drivers;
-        const deliveriesLink = document.querySelector('a[href="/deliveries"]');
-        if (deliveriesLink) deliveriesLink.textContent = translations[currentLang].deliveries;
-        const h1 = document.querySelector('h1');
-        if (h1) h1.textContent = translations[currentLang].title;
-        const clearBtn = document.getElementById('clearAllBtn');
-        if (clearBtn) clearBtn.textContent = translations[currentLang].clearAll;
-        const historyBtn = document.querySelector('button[onclick="showHistory()"]');
-        if (historyBtn) historyBtn.textContent = translations[currentLang].history;
+        // Elements with data-i18n will be updated from translations
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            const text = translations[currentLang] && translations[currentLang][key];
+            if (!text) return;
+            el.textContent = text;
+        });
+
         // Update page-specific elements only if they exist
-        const orderTitle = document.getElementById('orderTitle');
-        if (orderTitle) orderTitle.textContent = translations[currentLang].orderTitle;
-        const totalLabel = document.getElementById('totalLabel');
-        if (totalLabel) totalLabel.textContent = translations[currentLang].total;
-        const customerLabel = document.getElementById('customerLabel');
-        if (customerLabel) customerLabel.textContent = translations[currentLang].customer;
-        const notesLabel = document.getElementById('notesLabel');
-        if (notesLabel) notesLabel.textContent = translations[currentLang].notes;
-        const placeOrderBtn = document.getElementById('placeOrderBtn');
-        if (placeOrderBtn) placeOrderBtn.textContent = translations[currentLang].placeOrder;
-        const clearBtn2 = document.getElementById('clearBtn');
-        if (clearBtn2) clearBtn2.textContent = translations[currentLang].clear;
-        const readyTitle = document.getElementById('readyTitle');
-        if (readyTitle) readyTitle.textContent = translations[currentLang].readyTitle;
-        // Update driver assignment elements
-        const bulkAssignBtn = document.getElementById('bulkAssignBtn');
-        if (bulkAssignBtn) bulkAssignBtn.textContent = translations[currentLang].assign;
-        const selectAllBtn = document.getElementById('selectAllBtn');
-        if (selectAllBtn) selectAllBtn.textContent = translations[currentLang].selectAll;
+        const mapping = {
+            orderTitle: 'orderTitle',
+            totalLabel: 'total',
+            customerLabel: 'customer',
+            notesLabel: 'notes',
+            placeOrderBtn: 'placeOrder',
+            clearBtn: 'clear',
+            readyTitle: 'readyTitle'
+        };
+        Object.keys(mapping).forEach(id => {
+            const el = document.getElementById(id);
+            const key = mapping[id];
+            if (el && translations[currentLang] && translations[currentLang][key]) el.textContent = translations[currentLang][key];
+        });
+
+        // Update driver select placeholder if present
         const bulkDriverSelect = document.getElementById('bulkDriverSelect');
-        if (bulkDriverSelect && bulkDriverSelect.options[0]) bulkDriverSelect.options[0].text = translations[currentLang].selectDriver;
-        // Refresh ready orders if function exists
+        if (bulkDriverSelect && bulkDriverSelect.options[0]) bulkDriverSelect.options[0].text = translations[currentLang].selectDriver || bulkDriverSelect.options[0].text;
+
         if (typeof loadReadyOrders === 'function') loadReadyOrders();
     }
 
