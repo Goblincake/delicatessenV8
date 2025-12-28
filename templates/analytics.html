@@ -274,15 +274,15 @@
             <h3>⚙️ Profit Configuration</h3>
             <div class="filter-row">
                 <label for="monthlyRent">Monthly Rent:</label>
-                <input type="number" id="monthlyRent" step="0.01" min="0" placeholder="2000">
+                <input type="number" id="monthlyRent" step="0.01" min="0" placeholder="0">
                 <label for="courierCost">Courier Cost per Order:</label>
-                <input type="number" id="courierCost" step="0.01" min="0" placeholder="5.00">
+                <input type="number" id="courierCost" step="0.01" min="0" placeholder="0">
             </div>
             <div class="filter-row" style="margin-top:0.5rem;">
                 <label for="hourlyWage">Hourly Wage:</label>
-                <input type="number" id="hourlyWage" step="0.01" min="0" placeholder="15">
+                <input type="number" id="hourlyWage" step="0.01" min="0" placeholder="0">
                 <label for="dailyHours">Daily Hours Worked:</label>
-                <input type="number" id="dailyHours" step="0.1" min="0" placeholder="8">
+                <input type="number" id="dailyHours" step="0.1" min="0" placeholder="0">
                 <button type="button" class="btn btn-secondary" id="applyProfitConfigBtn" style="margin-left:0.5rem;">Save & Apply</button>
             </div>
             <div style="margin-top:0.5rem;color:var(--fg-muted);font-size:0.9rem;">Note: Daily Net Profit = Daily Revenue - (Product COGS + Rent/30 + (Hourly Wage * Daily Hours) + Courier Cost * Orders)</div>
@@ -601,10 +601,10 @@
                 isLoadingAnalytics = true;
                     // include profit/cost configuration as query params
                     const cfg = {
-                        monthly_rent: (document.getElementById('monthlyRent') && document.getElementById('monthlyRent').value) || localStorage.getItem('analytics.monthlyRent') || 2000,
-                        courier_cost: (document.getElementById('courierCost') && document.getElementById('courierCost').value) || localStorage.getItem('analytics.courierCost') || 300,
-                        hourly_wage: (document.getElementById('hourlyWage') && document.getElementById('hourlyWage').value) || localStorage.getItem('analytics.hourlyWage') || 0,
-                        daily_hours: (document.getElementById('dailyHours') && document.getElementById('dailyHours').value) || localStorage.getItem('analytics.dailyHours') || 8
+                        monthly_rent: Number((document.getElementById('monthlyRent') && document.getElementById('monthlyRent').value) || localStorage.getItem('analytics.monthlyRent') || 0),
+                        courier_cost: Number((document.getElementById('courierCost') && document.getElementById('courierCost').value) || localStorage.getItem('analytics.courierCost') || 0),
+                        hourly_wage: Number((document.getElementById('hourlyWage') && document.getElementById('hourlyWage').value) || localStorage.getItem('analytics.hourlyWage') || 0),
+                        daily_hours: Number((document.getElementById('dailyHours') && document.getElementById('dailyHours').value) || localStorage.getItem('analytics.dailyHours') || 0)
                     };
                     const params = new URLSearchParams(cfg);
                     const response = await fetch('/api/analytics?' + params.toString());
@@ -643,10 +643,10 @@
             loadProfitConfigToUI();
             const applyBtn = document.getElementById('applyProfitConfigBtn');
             if (applyBtn) applyBtn.addEventListener('click', () => {
-                const m = document.getElementById('monthlyRent').value || 2000;
-                const c = document.getElementById('courierCost').value || 300;
+                const m = document.getElementById('monthlyRent').value || 0;
+                const c = document.getElementById('courierCost').value || 0;
                 const h = document.getElementById('hourlyWage').value || 0;
-                const d = document.getElementById('dailyHours').value || 8;
+                const d = document.getElementById('dailyHours').value || 0;
                 localStorage.setItem('analytics.monthlyRent', m);
                 localStorage.setItem('analytics.courierCost', c);
                 localStorage.setItem('analytics.hourlyWage', h);
@@ -717,9 +717,10 @@
                 dummyData.daily_costs.push([dateStr, Math.round(dailyCosts)]);
                 dummyData.daily_profits.push([dateStr, Math.round(dailyProfits)]);
                 // Build a reasonable breakdown for dummy data so the breakdown modal can display details
-                const rentPerDay = Math.round(2000 / 30);
-                const laborPerDay = Math.round(15 * 8);
-                const courierTotal = Math.round(dailyOrders * 5);
+                // Defaults changed to 0 so profit configuration defaults produce zero overheads
+                const rentPerDay = 0;
+                const laborPerDay = 0;
+                const courierTotal = Math.round(dailyOrders * 0);
                 let productCogs = Math.round(dailyCosts - (rentPerDay + laborPerDay + courierTotal));
                 if (productCogs < 0) productCogs = Math.max(0, Math.round(dailyCosts * 0.6));
                 dummyData.daily_breakdowns.push([dateStr, {

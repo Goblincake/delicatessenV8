@@ -287,21 +287,21 @@ def get_analytics():
     
     # Read cost settings from query params (allow client to pass configuration)
     try:
-        monthly_rent = float(request.args.get('monthly_rent', 2000))
+        monthly_rent = float(request.args.get('monthly_rent', 0))
     except Exception:
-        monthly_rent = 2000.0
+        monthly_rent = 0.0
     try:
-        courier_cost_per_order = float(request.args.get('courier_cost', 300))
+        courier_cost_per_order = float(request.args.get('courier_cost', 0))
     except Exception:
-        courier_cost_per_order = 300.0
+        courier_cost_per_order = 0.0
     try:
         hourly_wage = float(request.args.get('hourly_wage', 0))
     except Exception:
         hourly_wage = 0.0
     try:
-        daily_hours = float(request.args.get('daily_hours', 8))
+        daily_hours = float(request.args.get('daily_hours', 0))
     except Exception:
-        daily_hours = 8.0
+        daily_hours = 0.0
 
     # accumulate per-day intermediate values
     for order in history:
