@@ -1124,33 +1124,7 @@
             }
         }
 
-        // Load ready orders on page load
-        loadReadyOrders();
-        // wire toggle
-        document.getElementById('toggleReadyBtn')?.addEventListener('click', () => {
-            const list = document.getElementById('readyOrdersList');
-            if (!list) return;
-            list.style.display = list.style.display === 'none' ? 'block' : 'none';
-        });
-        // setInterval(loadReadyOrders, 3000); // Commented out to stop continuous polling
-
-        // Close modals on overlay click
-        document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    overlay.classList.remove('active');
-                }
-            });
-        });
-
-        // Keyboard shortcut to close modals
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal-overlay.active').forEach(modal => {
-                    modal.classList.remove('active');
-                });
-            }
-        });
+        // (duplicate block removed) — ready orders are loaded once above and handlers attached
 
         // Load ready orders on page load
         loadReadyOrders();
