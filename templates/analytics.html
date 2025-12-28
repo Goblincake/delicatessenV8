@@ -534,12 +534,14 @@
             const end = document.getElementById('endDate');
             if (start && end) {
                 ['focus', 'mousedown', 'touchstart'].forEach(evt => {
-                    start.addEventListener(evt, stopAutoRefresh);
-                    end.addEventListener(evt, stopAutoRefresh);
+                    const opts = evt === 'touchstart' ? { passive: true } : false;
+                    start.addEventListener(evt, stopAutoRefresh, opts);
+                    end.addEventListener(evt, stopAutoRefresh, opts);
                 });
                 ['blur', 'mouseup', 'touchend'].forEach(evt => {
-                    start.addEventListener(evt, () => { setTimeout(startAutoRefresh, 500); });
-                    end.addEventListener(evt, () => { setTimeout(startAutoRefresh, 500); });
+                    const opts = evt === 'touchend' ? { passive: true } : false;
+                    start.addEventListener(evt, () => { setTimeout(startAutoRefresh, 500); }, opts);
+                    end.addEventListener(evt, () => { setTimeout(startAutoRefresh, 500); }, opts);
                 });
             }
         });
