@@ -821,8 +821,8 @@
                     datasets: [{
                         label: translations[currentLang].dailyOrdersLabel,
                         data: analyticsData.daily_orders.map(([, count]) => count),
-                        backgroundColor: 'var(--accent)',
-                        borderColor: 'var(--accent)',
+                        backgroundColor: 'rgba(14,99,156,0.85)',
+                        borderColor: 'rgba(14,99,156,1)',
                         borderWidth: 1
                     }]
                 },
@@ -873,8 +873,8 @@
                     datasets: [{
                         label: translations[currentLang].hourlyOrdersLabel,
                         data: hourCounts,
-                        backgroundColor: 'var(--warning)',
-                        borderColor: 'var(--warning)',
+                        backgroundColor: 'rgba(255,152,0,0.9)',
+                        borderColor: 'rgba(255,152,0,1)',
                         borderWidth: 1
                     }]
                 },
@@ -943,14 +943,14 @@
                     datasets: [{
                         label: translations[currentLang].costs,
                         data: analyticsData.daily_costs.map(([, cost]) => cost),
-                        backgroundColor: 'var(--danger)',
-                        borderColor: 'var(--danger)',
+                        backgroundColor: 'rgba(244,67,54,0.85)',
+                        borderColor: 'rgba(244,67,54,1)',
                         borderWidth: 1
                     }, {
                         label: translations[currentLang].profits,
                         data: analyticsData.daily_profits.map(([, profit]) => profit),
-                        backgroundColor: 'var(--success)',
-                        borderColor: 'var(--success)',
+                        backgroundColor: 'rgba(76,175,80,0.85)',
+                        borderColor: 'rgba(76,175,80,1)',
                         borderWidth: 1
                     }]
                 },
