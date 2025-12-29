@@ -65,30 +65,57 @@
         fetchDrivers();
 
         // Language toggle
-        const translations = {
-            es: {
-                menu: "🛒 Menú",
-                pedidos: "📋 Pedidos",
-                analytics: "📊 Análisis",
-                drivers: "🛵 Repartidores",
-                deliveries: "🚚 Entregas",
-                langBtn: "🌐 EN",
-                title: "Gestión de Repartidores",
-                name: "Nombre del repartidor",
-                add: "Agregar"
-            },
-            en: {
-                menu: "🛒 Menu",
-                pedidos: "📋 Orders",
-                analytics: "📊 Analytics",
-                drivers: "🛵 Drivers",
-                deliveries: "🚚 Deliveries",
-                langBtn: "🌐 ES",
-                title: "Driver Management",
-                name: "Driver name",
-                add: "Add"
-            }
-        };
+        if (typeof translations === 'undefined') {
+            var translations = {
+                es: {
+                    menu: "🛒 Menú",
+                    pedidos: "📋 Pedidos",
+                    analytics: "📊 Análisis",
+                    drivers: "🛵 Repartidores",
+                    deliveries: "🚚 Entregas",
+                    langBtn: "🌐 EN",
+                    title: "Gestión de Repartidores",
+                    name: "Nombre del repartidor",
+                    add: "Agregar"
+                },
+                en: {
+                    menu: "🛒 Menu",
+                    pedidos: "📋 Orders",
+                    analytics: "📊 Analytics",
+                    drivers: "🛵 Drivers",
+                    deliveries: "🚚 Deliveries",
+                    langBtn: "🌐 ES",
+                    title: "Driver Management",
+                    name: "Driver name",
+                    add: "Add"
+                }
+            };
+        } else {
+            Object.assign(translations, {
+                es: {
+                    menu: "🛒 Menú",
+                    pedidos: "📋 Pedidos",
+                    analytics: "📊 Análisis",
+                    drivers: "🛵 Repartidores",
+                    deliveries: "🚚 Entregas",
+                    langBtn: "🌐 EN",
+                    title: "Gestión de Repartidores",
+                    name: "Nombre del repartidor",
+                    add: "Agregar"
+                },
+                en: {
+                    menu: "🛒 Menu",
+                    pedidos: "📋 Orders",
+                    analytics: "📊 Analytics",
+                    drivers: "🛵 Drivers",
+                    deliveries: "🚚 Deliveries",
+                    langBtn: "🌐 ES",
+                    title: "Driver Management",
+                    name: "Driver name",
+                    add: "Add"
+                }
+            });
+        }
 
         let currentLang = localStorage.getItem('lang') || 'es';
 
