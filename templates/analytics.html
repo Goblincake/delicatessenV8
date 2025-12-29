@@ -855,6 +855,7 @@
                 let productCogs = Math.round(dailyCosts - (rentPerDay + laborPerDay + courierTotal));
                 if (productCogs < 0) productCogs = Math.max(0, Math.round(dailyCosts * 0.6));
                 dummyData.daily_breakdowns.push([dateStr, {
+                    revenue: Math.round(dailyRevenue),
                     product_cogs: productCogs,
                     rent: rentPerDay,
                     labor: laborPerDay,
