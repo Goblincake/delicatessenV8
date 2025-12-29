@@ -1292,6 +1292,9 @@
                 console.debug('error clearing previous modal content', e);
             }
 
+            // ensure the modal holder is empty (remove any previous breakdown HTML)
+            try { holder.innerHTML = ''; } catch (e) { /* ignore if holder missing */ }
+
             // create a cloned canvas for the modal so the original chart remains in-place
             const modalCanvas = document.createElement('canvas');
             const cloneId = chartId + '_modal_clone';
@@ -1361,6 +1364,8 @@
             } catch (e) { console.debug('error destroying clone chart', e); }
             if (cloneCanvas && cloneCanvas.parentNode) cloneCanvas.parentNode.removeChild(cloneCanvas);
             delete chartInstances[cloneId];
+            // clear any remaining modal content
+            try { const holder = document.getElementById('modalCanvasHolder'); if (holder) holder.innerHTML = ''; } catch (e) { }
             modal.style.display = 'none';
             modalOpenChartId = null;
         }
