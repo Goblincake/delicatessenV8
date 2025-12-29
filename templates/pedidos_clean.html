@@ -112,10 +112,31 @@
         // Timer utilities: format elapsed and update every second
         function parseTimestamp(ts){
             if(!ts) return null;
-            // Expecting format 'YYYY-MM-DD HH:MM:SS' or ISO
-            const t = ts.includes('T') ? new Date(ts) : new Date(ts.replace(' ', 'T'));
-            if(isNaN(t)) return null;
-            return t;
+            // If already a Date
+            if(ts instanceof Date) return ts;
+            // If numeric epoch
+            if(typeof ts === 'number') return new Date(ts);
+            const s = String(ts).trim();
+            // ISO or contains date part: 'YYYY-MM-DDTHH:MM:SS' or 'YYYY-MM-DD HH:MM:SS'
+            if(s.includes('T') || /\d{4}-\d{2}-\d{2}/.test(s)){
+                const iso = s.includes('T') ? s : s.replace(' ', 'T');
+                const d = new Date(iso);
+                if(!isNaN(d)) return d;
+            }
+            // Time-only like 'HH:MM' or 'HH:MM:SS' (assume today)
+            const timeOnly = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?$/);
+            if(timeOnly){
+                const now = new Date();
+                const hh = Number(timeOnly[1]);
+                const mm = Number(timeOnly[2]);
+                const ss = Number(timeOnly[3]||0);
+                const ms = Number((timeOnly[4]||'0').padEnd(3,'0'));
+                const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss, ms);
+                return d;
+            }
+            // Fallback: try Date constructor
+            const fallback = new Date(s);
+            return isNaN(fallback) ? null : fallback;
         }
 
         function formatElapsed(ts){
