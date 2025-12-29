@@ -293,6 +293,26 @@
             align-items: center;
         }
 
+        /* compact/small button used in tight controls */
+        .btn-small {
+            padding: 0.28rem 0.5rem;
+            font-size: 0.92rem;
+            border-radius: 4px;
+        }
+
+        /* bulk assign row should wrap on narrow widths to avoid overflow */
+        .bulk-assign-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .bulk-assign-row select {
+            min-width: 0; /* allow shrinking in flex */
+            flex: 1 1 auto;
+        }
+
         .ready-orders-list .driver-select {
             flex: 1;
         }
@@ -821,12 +841,12 @@
                     <!-- Bulk Assign Section -->
                     <div style="margin-top:0; padding:0.6rem; background:var(--bg-card); border-radius:8px; border:1px solid var(--border);">
                         <h4 style="margin:0 0 0.5rem 0; font-size:0.95rem;">Asignar Seleccionados</h4>
-                        <div style="display:flex; gap:0.5rem; align-items:center;">
-                            <select id="bulkDriverSelect" style="flex:1;">
+                        <div class="bulk-assign-row" style="margin:0;">
+                            <select id="bulkDriverSelect">
                                 <option value="">-- Seleccionar Repartidor --</option>
                             </select>
-                            <button id="bulkAssignBtn" class="btn btn-primary" style="padding:0.4rem 0.8rem;">Asignar</button>
-                            <button id="selectAllBtn" class="btn btn-secondary" style="padding:0.4rem 0.8rem;">Seleccionar Todos</button>
+                            <button id="bulkAssignBtn" class="btn btn-primary btn-small">Asignar</button>
+                            <button id="selectAllBtn" class="btn btn-secondary btn-small">Seleccionar Todos</button>
                         </div>
                     </div>
 
