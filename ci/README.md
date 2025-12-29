@@ -6,3 +6,20 @@ If you want to disable or remove CI, delete both `.github/workflows/ci.yml` and 
 Included:
 - `requirements-dev.txt` — pip packages used by CI
 - `run_checks.sh` — script that runs ruff, mypy and pytest
+- `install_dev.sh` — convenience script to create a local `.venv` and install dev tools (Unix)
+- `install_dev.ps1` — PowerShell equivalent for Windows
+
+Local setup
+1. Unix / WSL / macOS:
+	- `bash ci/install_dev.sh` (creates `.venv`, installs dev deps)
+	- `./ci/run_checks.sh` (will activate `.venv` automatically)
+
+2. Windows PowerShell:
+	- `.
+	ci\install_dev.ps1` (creates `.venv`, installs dev deps)
+	- Run the checks from PowerShell by activating the venv: `.
+	  .venv\Scripts\Activate.ps1` and then run the individual tools, or use Git Bash to run `./ci/run_checks.sh`.
+
+Notes
+- The `run_checks.sh` script will activate `.venv` if present; otherwise it installs tools into the active environment.
+- Delete the `.venv` directory to remove local tooling; delete `.github/workflows/ci.yml` and the `ci/` folder to remove CI.

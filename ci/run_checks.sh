@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Installing dev dependencies..."
-python -m pip install --upgrade pip
-if [ -f "ci/requirements-dev.txt" ]; then
-  pip install -r ci/requirements-dev.txt
+echo "Using local .venv if present, else installing to environment..."
+if [ -d ".venv" ]; then
+  # activate venv in POSIX shells
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  echo "Activated .venv"
 else
-  pip install ruff mypy pytest
+  python -m pip install --upgrade pip
+  if [ -f "ci/requirements-dev.txt" ]; then
+    pip install -r ci/requirements-dev.txt
+  else
+    pip install ruff mypy pytest
+  fi
 fi
 
 echo "Running ruff (lint)..."
