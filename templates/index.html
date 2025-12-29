@@ -133,7 +133,7 @@
             background-color: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 6px;
-            padding: 0.45rem 0.6rem;
+            padding: 0.45rem 0.9rem 0.45rem 0.6rem; /* extra right padding to reserve space for price */
             cursor: pointer;
             transition: all 0.16s;
             display: flex;
@@ -143,6 +143,7 @@
             min-height: 44px; /* reserve space for two-line names */
             box-sizing: border-box;
             overflow: hidden;
+            position: relative; /* allow absolute-positioned price */
         }
 
         .menu-item:hover {
@@ -170,10 +171,16 @@
             color: var(--success);
             font-weight: 600;
             font-size: 0.95rem;
-            flex: 0 0 auto;
-            margin-left: 0.5rem;
             white-space: nowrap;
-            padding-left: 6px;
+            position: absolute; /* keep price in top-right and out of name flow */
+            right: 0.6rem;
+            top: 0.45rem;
+            transform: translateY(0);
+        }
+
+        /* ensure name doesn't flow under the absolutely-positioned price */
+        .menu-item .item-name {
+            margin-right: 3.6rem;
         }
 
         /* Order Panel */
