@@ -713,6 +713,27 @@
             function escapeHtml(text) { if (text == null) return ''; const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
         }
 
+        // Add simple (non-customized) item to current order
+        function addToOrder(item, price){
+            if(!selectedItems[item]){
+                selectedItems[item] = { price: price, quantity: 1 };
+            } else {
+                selectedItems[item].quantity += 1;
+            }
+            updateOrderDisplay();
+        }
+
+        // Add a customized item (with options/original name) to the order
+        function addCustomizedToOrder(displayName, originalName, perUnitPrice, qty, opts){
+            qty = parseInt(qty) || 1;
+            if(!selectedItems[displayName]){
+                selectedItems[displayName] = { price: perUnitPrice, quantity: qty, options: opts || {}, original_name: originalName };
+            } else {
+                selectedItems[displayName].quantity += qty;
+            }
+            updateOrderDisplay();
+        }
+
         async function openCustomization(itemName){
             // create modal holder immediately with loading state to ensure first-click feels responsive
             let holder = document.getElementById('customModal');
