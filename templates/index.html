@@ -61,14 +61,30 @@
         .main-content {
             display: flex;
             flex: 1;
-            overflow: hidden;
+            gap: 1rem;
+            align-items: flex-start;
+            overflow-y: auto;
+            padding: 0 1rem 1rem 1rem;
         }
 
         /* Menu Panel */
         .menu-panel {
-            flex: 2;
-            padding: 1rem;
+            flex: 2 1 0;
+            padding: 0.6rem;
             overflow-y: auto;
+            min-width: 240px;
+        }
+
+        .order-panel {
+            flex: 1 0 360px;
+            min-width: 300px;
+            max-width: 480px;
+        }
+
+        .ready-orders-panel {
+            flex: 0 0 360px;
+            min-width: 260px;
+            max-width: 380px;
         }
 
         .category {
@@ -80,9 +96,9 @@
 
         .category-header {
             background-color: var(--bg-card);
-            padding: 0.75rem 1rem;
+            padding: 0.5rem 0.8rem;
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 1rem;
             border-bottom: 1px solid var(--border);
             cursor: pointer;
             display: flex;
@@ -108,19 +124,26 @@
 
         .category-items {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 0.75rem;
-            padding: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); /* tighter tiles */
+            gap: 0.35rem; /* smaller gaps */
+            padding: 0.4rem; /* reduce padding */
         }
 
         .menu-item {
             background-color: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 1rem;
+            border-radius: 4px;
+            padding: 0.35rem 0.7rem 0.35rem 0.45rem; /* tighter padding */
             cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
+            transition: all 0.12s;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.35rem;
+            min-height: 40px; /* slightly smaller */
+            box-sizing: border-box;
+            overflow: hidden;
+            position: relative; /* allow absolute-positioned price */
         }
 
         .menu-item:hover {
@@ -134,15 +157,28 @@
         }
 
         .menu-item .item-name {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            font-size: 0.95rem;
+            font-weight: 600;
+            font-size: 0.92rem; /* slightly increased for readability */
+            line-height: 1.04;
+            overflow: visible;
+            white-space: normal; /* allow wrapping so full product names are visible */
+            display: block;
+            flex: 1 1 auto;
+            min-width: 0; /* allow flex children to shrink properly */
+            margin-right: 3.2rem; /* ensure reserved space for price remains */
+            max-width: calc(100% - 56px);
         }
 
         .menu-item .item-price {
             color: var(--success);
-            font-weight: 600;
-            font-size: 1.1rem;
+            font-weight: 700;
+            font-size: 0.9rem; /* increase price size for legibility */
+            white-space: nowrap;
+            position: absolute; /* keep price out of name flow */
+            right: 0.55rem;
+            top: 50%; /* vertically center price */
+            transform: translateY(-50%);
+            line-height: 1;
         }
 
         /* Order Panel */
@@ -257,6 +293,26 @@
             align-items: center;
         }
 
+        /* compact/small button used in tight controls */
+        .btn-small {
+            padding: 0.28rem 0.5rem;
+            font-size: 0.92rem;
+            border-radius: 4px;
+        }
+
+        /* bulk assign row should wrap on narrow widths to avoid overflow */
+        .bulk-assign-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .bulk-assign-row select {
+            min-width: 0; /* allow shrinking in flex */
+            flex: 1 1 auto;
+        }
+
         .ready-orders-list .driver-select {
             flex: 1;
         }
@@ -274,6 +330,15 @@
         .order-header h2 {
             font-size: 1.2rem;
             margin-bottom: 1rem;
+        }
+        /* Collapsible completed list */
+        #completedList.collapsed .completed-content {
+            display: none;
+        }
+        #completedList .collapse-toggle {
+            margin-left: auto;
+            padding: 0.18rem 0.4rem;
+            font-size: 0.85rem;
         }
         
         /* Assigned order timer bar */
@@ -533,7 +598,7 @@
         .order-total {
             display: flex;
             justify-content: space-between;
-            font-size: 1.3rem;
+            font-size: 1.35rem;
             font-weight: 600;
             margin-bottom: 1rem;
         }
@@ -548,13 +613,13 @@
         }
 
         .btn {
-            padding: 0.75rem 1rem;
+            padding: 0.85rem 1.05rem;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 500;
-            transition: all 0.2s;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.18s;
         }
 
         .btn-primary {
@@ -758,65 +823,56 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Ready Orders Panel (right column) -->
+            <aside class="ready-orders-panel" style="margin-left:1rem; width:360px; min-width:260px;">
+                <div style="padding:0.5rem 1rem; display:flex; gap:1rem; align-items:center;">
+                    <strong style="font-size:0.95rem;">Estado de Debug:</strong>
+                    <div id="readyDebug" style="background:var(--bg-card);padding:0.25rem 0.5rem;border-radius:6px;">Pedidos listos: <span id="readyCount">0</span></div>
+                    <button id="toggleReadyBtn" class="btn btn-secondary" style="padding:0.25rem 0.5rem;">Ocultar/Mostrar lista</button>
+                </div>
+                <div class="order-header" style="padding:0.5rem 1rem;">
+                    <h2 id="readyTitle">🚚 Pedidos Listos para Entrega</h2>
+                </div>
+                <div style="padding:0.75rem; display:flex; flex-direction:column; gap:0.75rem;">
+                    <div class="ready-orders-list" id="readyOrdersList" style="padding:0;">
+                        <div class="order-empty"><p>No hay pedidos listos</p></div>
+                    </div>
+                    <!-- Bulk Assign Section -->
+                    <div style="margin-top:0; padding:0.6rem; background:var(--bg-card); border-radius:8px; border:1px solid var(--border);">
+                        <h4 style="margin:0 0 0.5rem 0; font-size:0.95rem;">Asignar Seleccionados</h4>
+                        <div class="bulk-assign-row" style="margin:0;">
+                            <select id="bulkDriverSelect">
+                                <option value="">-- Seleccionar Repartidor --</option>
+                            </select>
+                            <button id="bulkAssignBtn" class="btn btn-primary btn-small">Asignar</button>
+                            <button id="selectAllBtn" class="btn btn-secondary btn-small">Seleccionar Todos</button>
+                        </div>
+                    </div>
+
+                    <div id="assignedList">
+                        <div class="order-header" style="padding:0.4rem 1rem;">
+                            <h3 style="margin:0; font-size:0.95rem;">🟦 Asignados</h3>
+                        </div>
+                        <div style="padding:0.5rem;">
+                            <div class="order-empty" id="assignedEmpty"><p>No hay repartidores asignados</p></div>
+                            <div id="assignedItems"></div>
+                        </div>
+                    </div>
+
+                    <div id="completedList">
+                        <div class="order-header" style="padding:0.4rem 1rem; display:flex; align-items:center; gap:0.5rem;">
+                            <h3 style="margin:0; font-size:0.95rem;">✅ Completados</h3>
+                            <button id="toggleCompletedBtn" class="btn btn-secondary collapse-toggle">Plegar</button>
+                        </div>
+                        <div class="completed-content" style="padding:0.5rem;">
+                            <div class="order-empty" id="completedEmpty"><p>No hay pedidos completados</p></div>
+                            <div id="completedItems"></div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
         </main>
-
-        <!-- Ready Orders Panel (moved below container to avoid overlap) -->
-    </div>
-
-    <!-- Ready Orders Panel (placed below main container to avoid overlapping the menu) -->
-    <div class="ready-orders-panel" style="margin-top:1rem;">
-        <div style="padding:0.5rem 2rem; display:flex; gap:1rem; align-items:center;">
-            <strong style="font-size:0.95rem;">Estado de Debug:</strong>
-            <div id="readyDebug" style="background:var(--bg-card);padding:0.25rem 0.5rem;border-radius:6px;">Pedidos listos: <span id="readyCount">0</span></div>
-            <button id="toggleReadyBtn" class="btn btn-secondary" style="padding:0.25rem 0.5rem;">Ocultar/Mostrar lista</button>
-        </div>
-        <div class="order-header" style="padding:0.75rem 2rem;">
-            <h2 id="readyTitle">🚚 Pedidos Listos para Entrega</h2>
-        </div>
-        <div style="display:flex; gap:1rem; padding:1rem;">
-            <div style="flex:1;">
-                <div class="ready-orders-list" id="readyOrdersList" style="padding:0;">
-                    <div class="order-empty">
-                        <p>No hay pedidos listos</p>
-                    </div>
-                </div>
-                <!-- Bulk Assign Section -->
-                <div style="margin-top:1rem; padding:1rem; background:var(--bg-card); border-radius:8px; border:1px solid var(--border);">
-                    <h4 style="margin:0 0 0.5rem 0; font-size:1rem;">Asignar Seleccionados</h4>
-                    <div style="display:flex; gap:0.5rem; align-items:center;">
-                        <select id="bulkDriverSelect" style="flex:1;">
-                            <option value="">-- Seleccionar Repartidor --</option>
-                        </select>
-                        <button id="bulkAssignBtn" class="btn btn-primary" style="padding:0.5rem 1rem;">Asignar</button>
-                        <button id="selectAllBtn" class="btn btn-secondary" style="padding:0.5rem 1rem;">Seleccionar Todos</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="assignedList" style="width:320px; min-width:260px;">
-                <div class="order-header" style="padding:0.5rem 1rem;">
-                    <h3 style="margin:0; font-size:1rem;">🟦 Asignados</h3>
-                </div>
-                <div style="padding:0.75rem;">
-                    <div class="order-empty" id="assignedEmpty">
-                        <p>No hay repartidores asignados</p>
-                    </div>
-                    <div id="assignedItems"></div>
-                </div>
-            </div>
-
-            <div id="completedList" style="width:320px; min-width:260px;">
-                <div class="order-header" style="padding:0.5rem 1rem;">
-                    <h3 style="margin:0; font-size:1rem;">✅ Completados</h3>
-                </div>
-                <div style="padding:0.75rem;">
-                    <div class="order-empty" id="completedEmpty">
-                        <p>No hay pedidos completados</p>
-                    </div>
-                    <div id="completedItems"></div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Receipt Modal -->
@@ -1528,6 +1584,31 @@
             if (!list) return;
             list.style.display = list.style.display === 'none' ? 'block' : 'none';
         });
+
+        // Completed list collapse toggle (persisted)
+        function setCompletedCollapsed(collapsed){
+            const el = document.getElementById('completedList');
+            if(!el) return;
+            if(collapsed){
+                el.classList.add('collapsed');
+                document.getElementById('toggleCompletedBtn').textContent = 'Desplegar';
+            } else {
+                el.classList.remove('collapsed');
+                document.getElementById('toggleCompletedBtn').textContent = 'Plegar';
+            }
+            try{ localStorage.setItem('completedCollapsed', collapsed? '1':'0'); }catch(e){}
+        }
+
+        document.getElementById('toggleCompletedBtn')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('completedCollapsed') === '1';
+            setCompletedCollapsed(!cur);
+        });
+
+        // initialize from storage
+        try{
+            const stored = localStorage.getItem('completedCollapsed');
+            if(stored === '1') setCompletedCollapsed(true);
+        }catch(e){}
         // setInterval(loadReadyOrders, 3000); // Commented out to stop continuous polling
 
         // Close modals on overlay click

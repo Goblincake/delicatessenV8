@@ -7,6 +7,7 @@
         <a href="/drivers" class="btn btn-secondary" data-i18n="drivers">🛵 Repartidores</a>
         <a href="/deliveries" class="btn btn-secondary" data-i18n="deliveries">🚚 Entregas</a>
         <button class="btn btn-secondary" onclick="toggleLanguage()" id="langBtn" data-i18n="langBtn">🌐 EN</button>
+        
         {% if is_index %}
         <button class="btn btn-secondary" onclick="showHistory()" data-i18n="history">📋 Historial</button>
         <button id="clearAllBtn" class="btn btn-danger" onclick="clearAllOrders()" data-i18n="clearAll">🗑️ Borrar Pedidos</button>
@@ -78,6 +79,7 @@
             unassigned: "(unassigned)"
         }
     };
+    
 
     let currentLang = localStorage.getItem('lang') || 'es';
 
@@ -118,6 +120,8 @@
 
         if (typeof loadReadyOrders === 'function') loadReadyOrders();
     }
+
+    
 
     // Apply language on load
     window.addEventListener('DOMContentLoaded', applyLanguage);
