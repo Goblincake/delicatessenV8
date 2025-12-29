@@ -1144,6 +1144,31 @@
                 // fallback: reuse config if deep copy fails
                 cloneConfig = { type: chart.config.type, data: chart.data, options: chart.options };
             }
+            // Preserve function handlers (like onClick) which are lost by JSON serialization
+            try {
+                if (chart && chart.config && chart.config.options) {
+                    cloneConfig.options = cloneConfig.options || {};
+                    if (typeof chart.config.options.onClick === 'function') {
+                        cloneConfig.options.onClick = chart.config.options.onClick;
+                    }
+                    // copy plugin callbacks if present
+                    if (chart.config.options.plugins) {
+                        cloneConfig.options.plugins = cloneConfig.options.plugins || {};
+                        Object.keys(chart.config.options.plugins).forEach(k => {
+                            const val = chart.config.options.plugins[k];
+                            if (val && typeof val === 'object') {
+                                // shallow copy functions inside plugin config
+                                cloneConfig.options.plugins[k] = cloneConfig.options.plugins[k] || {};
+                                Object.keys(val).forEach(pk => {
+                                    if (typeof val[pk] === 'function') cloneConfig.options.plugins[k][pk] = val[pk];
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.debug('Could not preserve function handlers for clone', e);
+            }
 
             try {
                 const ctx = modalCanvas.getContext('2d');
