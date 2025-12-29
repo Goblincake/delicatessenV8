@@ -16,6 +16,7 @@
         .orders{display:flex;flex-direction:column;gap:12px}
         .order-card{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:8px}
         .order-header{display:flex;justify-content:space-between;align-items:center}
+        .order-wait{font-size:0.85rem;color:var(--accent);margin-top:6px;text-align:right}
         .order-code{font-weight:700}
         .order-customer{color:var(--muted);font-size:0.95rem}
         .order-body{margin-top:8px}
@@ -74,7 +75,10 @@
                                 <div class="order-code">${orderCode}</div>
                                 <div class="order-customer">${escapeHtml(order.customer)}</div>
                             </div>
-                            <div class="order-time">${time}</div>
+                            <div>
+                                <div class="order-time">${time}</div>
+                                <div class="order-wait" data-ts="${escapeHtml(order.timestamp||'')}">${formatElapsed(order.timestamp||'')}</div>
+                            </div>
                         </div>
                         <div class="order-body">
                             ${itemsHtml}
@@ -92,6 +96,8 @@
             if(orders.length>lastOrderCount && lastOrderCount>0){ showToast('🆕 ¡Nuevo pedido!') }
             lastOrderCount = orders.length;
             renderOrders(orders.filter(o=>!o.status || o.status==='pending'));
+            // Update timers immediately after rendering
+            updateTimers();
         }
 
         async function updateStatus(orderId,status){
@@ -103,6 +109,53 @@
 
         // init
         loadOrders(); setInterval(loadOrders,3000);
+
+        // Timer utilities: parse, format, and update elapsed timers
+        function parseTimestamp(ts){
+            if(!ts) return null;
+            if(ts instanceof Date) return ts;
+            if(typeof ts === 'number') return new Date(ts);
+            const s = String(ts).trim();
+            if(s.includes('T') || /\d{4}-\d{2}-\d{2}/.test(s)){
+                const iso = s.includes('T') ? s : s.replace(' ', 'T');
+                const d = new Date(iso);
+                if(!isNaN(d)) return d;
+            }
+            const timeOnly = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?$/);
+            if(timeOnly){
+                const now = new Date();
+                const hh = Number(timeOnly[1]);
+                const mm = Number(timeOnly[2]);
+                const ss = Number(timeOnly[3]||0);
+                const ms = Number((timeOnly[4]||'0').padEnd(3,'0'));
+                return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss, ms);
+            }
+            const fallback = new Date(s);
+            return isNaN(fallback) ? null : fallback;
+        }
+
+        function formatElapsed(ts){
+            const d = parseTimestamp(ts);
+            if(!d) return '';
+            const diff = Math.floor((Date.now() - d.getTime())/1000);
+            if(diff < 0) return '0s';
+            const hours = Math.floor(diff/3600);
+            const minutes = Math.floor((diff%3600)/60);
+            const seconds = diff%60;
+            if(hours>0) return `${hours}h ${String(minutes).padStart(2,'0')}m ${String(seconds).padStart(2,'0')}s`;
+            if(minutes>0) return `${minutes}m ${String(seconds).padStart(2,'0')}s`;
+            return `${seconds}s`;
+        }
+
+        function updateTimers(){
+            document.querySelectorAll('.order-wait').forEach(el=>{
+                const ts = el.getAttribute('data-ts');
+                el.textContent = formatElapsed(ts);
+            });
+        }
+
+        // refresh timers every second
+        setInterval(updateTimers,1000);
     </script>
     
 </body>
