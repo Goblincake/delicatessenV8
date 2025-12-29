@@ -7,6 +7,8 @@
         <a href="/drivers" class="btn btn-secondary" data-i18n="drivers">🛵 Repartidores</a>
         <a href="/deliveries" class="btn btn-secondary" data-i18n="deliveries">🚚 Entregas</a>
         <button class="btn btn-secondary" onclick="toggleLanguage()" id="langBtn" data-i18n="langBtn">🌐 EN</button>
+        <button id="compactToggleBtn" class="btn btn-secondary" onclick="toggleCompactMode()" data-i18n="compactToggle">🗜️ Compact</button>
+        <button id="fitToggleBtn" class="btn btn-secondary" onclick="fitToViewport()" data-i18n="fitBtn">🔎 Fit</button>
         {% if is_index %}
         <button class="btn btn-secondary" onclick="showHistory()" data-i18n="history">📋 Historial</button>
         <button id="clearAllBtn" class="btn btn-danger" onclick="clearAllOrders()" data-i18n="clearAll">🗑️ Borrar Pedidos</button>
@@ -78,6 +80,10 @@
             unassigned: "(unassigned)"
         }
     };
+    // Add compact toggle translation key defaults if missing
+    Object.keys(translations).forEach(lang => {
+        translations[lang].compactToggle = translations[lang].compactToggle || (lang === 'es' ? '🔧 Compacto' : '🔧 Compact');
+    });
 
     let currentLang = localStorage.getItem('lang') || 'es';
 
@@ -119,8 +125,72 @@
         if (typeof loadReadyOrders === 'function') loadReadyOrders();
     }
 
-    // Apply language on load
-    window.addEventListener('DOMContentLoaded', applyLanguage);
+    // Compact mode: reduce paddings and make menu full-height
+    function toggleCompactMode(){
+        const cur = document.body.classList.toggle('compact');
+        localStorage.setItem('ui.compact', cur ? '1' : '0');
+        updateCompactButton();
+    }
+
+    function updateCompactButton(){
+        const btn = document.getElementById('compactToggleBtn');
+        if(!btn) return;
+        const enabled = document.body.classList.contains('compact');
+        btn.textContent = enabled ? (translations[currentLang].compactToggle + ' ✓') : translations[currentLang].compactToggle;
+    }
+
+    function applyCompactMode(){
+        const v = localStorage.getItem('ui.compact');
+        if(v === '1') document.body.classList.add('compact'); else document.body.classList.remove('compact');
+        updateCompactButton();
+    }
+
+    // Fit-to-viewport: scale the main container so everything fits without scrolling
+    function fitToViewport(){
+        const container = document.querySelector('.container');
+        if(!container) return;
+        // reset first
+        document.documentElement.style.setProperty('--main-scale', '1');
+        document.body.style.overflow = '';
+        // measure natural height
+        const totalH = document.documentElement.scrollHeight;
+        const winH = window.innerHeight;
+        let scale = 1;
+        if(totalH > winH) scale = (winH - 8) / totalH; // small margin
+        scale = Math.max(0.5, Math.min(1, scale));
+        document.documentElement.style.setProperty('--main-scale', String(scale));
+        if(scale < 1) document.body.style.overflow = 'hidden';
+        localStorage.setItem('ui.fitScale', String(scale));
+        updateFitButton();
+    }
+
+    function resetFit(){
+        document.documentElement.style.setProperty('--main-scale', '1');
+        document.body.style.overflow = '';
+        localStorage.removeItem('ui.fitScale');
+        updateFitButton();
+    }
+
+    function updateFitButton(){
+        const btn = document.getElementById('fitToggleBtn');
+        if(!btn) return;
+        const scale = parseFloat(localStorage.getItem('ui.fitScale') || '1');
+        btn.textContent = scale < 1 ? '🔎 Fit ✓' : translations[currentLang].fitBtn || '🔎 Fit';
+    }
+
+    function applyFitFromStorage(){
+        const s = localStorage.getItem('ui.fitScale');
+        if(s){
+            document.documentElement.style.setProperty('--main-scale', s);
+            if(parseFloat(s) < 1) document.body.style.overflow = 'hidden';
+        } else {
+            document.documentElement.style.setProperty('--main-scale', '1');
+        }
+        updateFitButton();
+    }
+
+    // Apply language, compact mode and fit settings on load
+    window.addEventListener('DOMContentLoaded', ()=>{ applyLanguage(); applyCompactMode(); applyFitFromStorage(); });
 
     function escapeHtml(text) {
         if (text == null) return '';
