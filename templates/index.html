@@ -124,23 +124,23 @@
 
         .category-items {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 0.5rem;
-            padding: 0.6rem;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); /* tighter tiles */
+            gap: 0.35rem; /* smaller gaps */
+            padding: 0.4rem; /* reduce padding */
         }
 
         .menu-item {
             background-color: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 0.45rem 0.9rem 0.45rem 0.6rem; /* extra right padding to reserve space for price */
+            border-radius: 4px;
+            padding: 0.35rem 0.7rem 0.35rem 0.45rem; /* tighter padding */
             cursor: pointer;
-            transition: all 0.16s;
+            transition: all 0.12s;
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
-            gap: 0.5rem;
-            min-height: 44px; /* reserve space for two-line names */
+            gap: 0.35rem;
+            min-height: 40px; /* slightly smaller */
             box-sizing: border-box;
             overflow: hidden;
             position: relative; /* allow absolute-positioned price */
@@ -158,8 +158,8 @@
 
         .menu-item .item-name {
             font-weight: 500;
-            font-size: 0.95rem;
-            line-height: 1.05;
+            font-size: 0.86rem; /* smaller to fit */
+            line-height: 1.02;
             overflow: visible;
             white-space: normal; /* allow wrapping so full product names are visible */
             display: block;
@@ -170,10 +170,10 @@
         .menu-item .item-price {
             color: var(--success);
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.82rem; /* slightly smaller */
             white-space: nowrap;
             position: absolute; /* keep price out of name flow */
-            right: 0.6rem;
+            right: 0.5rem;
             top: 50%; /* vertically center price */
             transform: translateY(-50%);
             line-height: 1;
@@ -181,8 +181,8 @@
 
         /* ensure name doesn't flow under the absolutely-positioned price */
         .menu-item .item-name {
-            margin-right: 4.2rem; /* slightly larger reserve for wider prices */
-            max-width: calc(100% - 68px); /* ensure name wraps before hitting price */
+            margin-right: 3.2rem; /* smaller reserve to tighten layout */
+            max-width: calc(100% - 56px);
         }
 
         /* Order Panel */
