@@ -711,38 +711,31 @@
             function escapeHtml(text) { if (text == null) return ''; const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
         }
 
-        function addToOrder(item, price) {
-            if (selectedItems[item]) {
-                selectedItems[item].quantity += 1;
-            } else {
-                selectedItems[item] = { price: price, quantity: 1 };
-            }
-            updateOrderDisplay();
-            showToast(`${item} agregado`);
-        }
-
-        function addCustomizedToOrder(displayName, originalName, price, quantity, options){
-            const key = displayName;
-            if (selectedItems[key]){
-                selectedItems[key].quantity += quantity;
-            } else {
-                selectedItems[key] = { price: price, quantity: quantity, options: options, original_name: originalName };
-            }
-            updateOrderDisplay();
-            showToast(`${originalName} agregado`);
-        }
-
         async function openCustomization(itemName){
+            // create modal holder immediately with loading state to ensure first-click feels responsive
+            let holder = document.getElementById('customModal');
+            if(!holder){
+                holder = document.createElement('div');
+                holder.id = 'customModal';
+                holder.className = 'modal-overlay';
+                holder.innerHTML = `<div class="modal"><div style="padding:20px;text-align:center">Cargando...</div></div>`;
+                document.body.appendChild(holder);
+                holder.addEventListener('click', (ev)=>{ if(ev.target === holder) { try{ holder.style.display='none' }catch(e){} } });
+            } else {
+                holder.innerHTML = `<div class="modal"><div style="padding:20px;text-align:center">Cargando...</div></div>`;
+                holder.style.display = 'block';
+            }
+
             try{
                 const r = await fetch('/api/menu');
-                if(!r.ok) return;
+                if(!r.ok) { showToast('Error cargando menú', 'error'); return; }
                 const menu = await r.json();
                 let itemData = null;
                 for(const cat of Object.keys(menu)){
                     const items = menu[cat];
                     if(items[itemName]){ itemData = items[itemName]; break }
                 }
-                if(!itemData){ showToast('Item no encontrado', 'error'); return }
+                if(!itemData){ showToast('Item no encontrado', 'error'); holder.style.display='none'; return }
 
                 const mods = itemData.modifiers || [];
                 let modalHtml = `<div style="padding:12px;max-width:420px">`;
@@ -755,22 +748,10 @@
                 });
                 modalHtml += `</div>`;
                 modalHtml += `<div style="margin-top:8px;display:flex;gap:8px;align-items:center"><label>Cantidad: <input id="modQty" type=number value=1 min=1 style="width:64px;margin-left:6px"></label><div id="modPrice" style="margin-left:auto;font-weight:700">$${itemData.price}</div></div>`;
-                    modalHtml += `<div style="margin-top:12px;text-align:right"><button id="cancelModBtn" class="btn-secondary" style="margin-right:8px">Cancelar</button><button class="btn-primary" id="confirmModBtn">Agregar</button></div>`;
+                modalHtml += `<div style="margin-top:12px;text-align:right"><button id="cancelModBtn" class="btn-secondary" style="margin-right:8px">Cancelar</button><button class="btn-primary" id="confirmModBtn">Agregar</button></div>`;
                 modalHtml += `</div>`;
 
-                let holder = document.getElementById('customModal');
-                if(!holder){
-                    holder = document.createElement('div');
-                    holder.id = 'customModal';
-                    holder.className = 'modal-overlay';
-                    holder.innerHTML = `<div class="modal">${modalHtml}</div>`;
-                    document.body.appendChild(holder);
-                    // click outside closes
-                    holder.addEventListener('click', (ev)=>{ if(ev.target === holder) closeCustom() });
-                } else {
-                    holder.innerHTML = `<div class="modal">${modalHtml}</div>`;
-                    holder.style.display = 'block';
-                }
+                holder.innerHTML = `<div class="modal">${modalHtml}</div>`;
 
                 const updatePreview = async ()=>{
                     const opts = {};
@@ -797,7 +778,35 @@
                     const summary = Object.keys(opts).filter(k=>opts[k]).join(', ');
                     const displayName = summary ? `${itemName} (${summary})` : itemName;
                     addCustomizedToOrder(displayName, itemName, Math.round(price/qty), qty, opts);
-                    closeCustom();
+                    // cleanup
+                    try{ holder.style.display='none' }catch(e){}
+                });
+
+                const cancelBtn = holder.querySelector('#cancelModBtn');
+                if(cancelBtn) cancelBtn.addEventListener('click', ()=> { try{ holder.style.display='none'}catch(e){} });
+
+                // focus trap and escape handling
+                const keyHandler = (e)=>{
+                    if(e.key === 'Escape'){
+                        e.preventDefault(); try{ holder.style.display='none' }catch(e){}; return;
+                    }
+                    if(e.key === 'Tab'){
+                        const focusable = Array.from(holder.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled && el.offsetParent !== null);
+                        if(focusable.length === 0) return;
+                        const first = focusable[0];
+                        const last = focusable[focusable.length-1];
+                        if(e.shiftKey){ if(document.activeElement === first){ e.preventDefault(); last.focus(); } }
+                        else { if(document.activeElement === last){ e.preventDefault(); first.focus(); } }
+                    }
+                };
+
+                document.addEventListener('keydown', keyHandler);
+                setTimeout(()=>{
+                    const focusable = Array.from(holder.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled && el.offsetParent !== null);
+                    if(focusable.length) focusable[0].focus();
+                }, 10);
+
+            }catch(e){ console.error(e); showToast('Error al abrir personalización'); try{ holder.style.display='none' }catch(ex){} }
                 });
 
                     const cancelBtn = holder.querySelector('#cancelModBtn');
