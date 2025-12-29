@@ -655,6 +655,30 @@
                 localStorage.setItem('analytics.dailyHours', d);
                 loadAnalytics();
             });
+            // Live update when config inputs change (save and refresh charts)
+            ['monthlyRent','courierCost','hourlyWage','dailyHours'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('change', () => {
+                    const m = document.getElementById('monthlyRent').value || 0;
+                    const c = document.getElementById('courierCost').value || 0;
+                    const h = document.getElementById('hourlyWage').value || 0;
+                    const d = document.getElementById('dailyHours').value || 0;
+                    localStorage.setItem('analytics.monthlyRent', m);
+                    localStorage.setItem('analytics.courierCost', c);
+                    localStorage.setItem('analytics.hourlyWage', h);
+                    localStorage.setItem('analytics.dailyHours', d);
+                    // If using dummy data, regenerate locally; otherwise fetch from server
+                    const useDummy = document.getElementById('useDummyData') && document.getElementById('useDummyData').checked;
+                    if (useDummy) {
+                        analyticsData = generateDummyData();
+                        updateStats();
+                        createCharts();
+                    } else {
+                        loadAnalytics();
+                    }
+                });
+            });
         });
 
         function toggleDummyData() {
@@ -719,10 +743,14 @@
                 dummyData.daily_costs.push([dateStr, Math.round(dailyCosts)]);
                 dummyData.daily_profits.push([dateStr, Math.round(dailyProfits)]);
                 // Build a reasonable breakdown for dummy data so the breakdown modal can display details
-                // Defaults changed to 0 so profit configuration defaults produce zero overheads
-                const rentPerDay = 0;
-                const laborPerDay = 0;
-                const courierTotal = Math.round(dailyOrders * 0);
+                // Use configured profit values from localStorage so dummy mode reflects user inputs
+                const cfgMonthly = Number(localStorage.getItem('analytics.monthlyRent') || 0);
+                const cfgCourier = Number(localStorage.getItem('analytics.courierCost') || 0);
+                const cfgHourly = Number(localStorage.getItem('analytics.hourlyWage') || 0);
+                const cfgDailyHours = Number(localStorage.getItem('analytics.dailyHours') || 0);
+                const rentPerDay = Math.round(cfgMonthly / 30);
+                const laborPerDay = Math.round(cfgHourly * cfgDailyHours);
+                const courierTotal = Math.round(dailyOrders * cfgCourier);
                 let productCogs = Math.round(dailyCosts - (rentPerDay + laborPerDay + courierTotal));
                 if (productCogs < 0) productCogs = Math.max(0, Math.round(dailyCosts * 0.6));
                 dummyData.daily_breakdowns.push([dateStr, {
