@@ -1,3 +1,11 @@
 ruff
 mypy
 pytest
+pytest-cov
+black
+isort
+pre-commit
+bandit
+vulture
+pip-audit
+safety

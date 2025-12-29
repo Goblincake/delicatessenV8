@@ -1,0 +1,27 @@
+# Python cache and envs
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+venv/
+.venv/
+env/
+
+# Editor configs
+.vscode/
+*.swp
+*.swo
+
+# CI scripts and reports (ignored)
+ci/
+ci/reports/
+
+# Local logs
+*.log
+
+# Keep runtime JSON files tracked (do not ignore): drivers.json, historial_pedidos.json, history.json, preferences.json, product_costs.json
+
+
+# OS files
+.DS_Store
+Thumbs.db

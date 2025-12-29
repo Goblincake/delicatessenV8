@@ -11,6 +11,9 @@
         {% if is_index %}
         <button class="btn btn-secondary" onclick="showHistory()" data-i18n="history">📋 Historial</button>
         <button id="clearAllBtn" class="btn btn-danger" onclick="clearAllOrders()" data-i18n="clearAll">🗑️ Borrar Pedidos</button>
+        <label style="display:flex;align-items:center;gap:.5rem;margin-left:.5rem;color:var(--fg-muted);font-size:0.9rem">Escala
+            <input id="tileScale" type="range" min="0.6" max="1.8" step="0.1" value="1" style="width:140px">
+        </label>
         {% endif %}
     </nav>
 </header>
@@ -46,6 +49,8 @@
             complete: "Completar",
             unassign: "Desasignar",
             unassigned: "(sin asignar)"
+            ,
+            
         },
         en: {
             menu: "🛒 Menu",
@@ -77,6 +82,8 @@
             complete: "Complete",
             unassign: "Unassign",
             unassigned: "(unassigned)"
+            ,
+            
         }
     };
     
@@ -118,13 +125,48 @@
         const bulkDriverSelect = document.getElementById('bulkDriverSelect');
         if (bulkDriverSelect && bulkDriverSelect.options[0]) bulkDriverSelect.options[0].text = translations[currentLang].selectDriver || bulkDriverSelect.options[0].text;
 
+        // address placeholder handling removed
+
         if (typeof loadReadyOrders === 'function') loadReadyOrders();
     }
 
     
 
-    // Apply language on load
-    window.addEventListener('DOMContentLoaded', applyLanguage);
+    // Tile scale helpers
+    const TILE_BASE_PX = 130; // default base tile width used in CSS
+
+    function setTileScale(scale) {
+        const px = Math.round(TILE_BASE_PX * Number(scale));
+        document.documentElement.style.setProperty('--menu-tile-min', px + 'px');
+    }
+
+    function initTileScale() {
+        const slider = document.getElementById('tileScale');
+        if (!slider) return;
+        // restore saved scale or use slider default
+        const saved = localStorage.getItem('tileScale');
+        if (saved) {
+            slider.value = saved;
+            setTileScale(saved);
+        } else {
+            setTileScale(slider.value);
+        }
+
+        slider.addEventListener('input', (e) => {
+            const v = e.target.value;
+            setTileScale(v);
+        });
+
+        slider.addEventListener('change', (e) => {
+            localStorage.setItem('tileScale', e.target.value);
+        });
+    }
+
+    // Apply language and tile scale on load
+    window.addEventListener('DOMContentLoaded', () => {
+        applyLanguage();
+        initTileScale();
+    });
 
     function escapeHtml(text) {
         if (text == null) return '';

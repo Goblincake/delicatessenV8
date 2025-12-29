@@ -4,18 +4,23 @@ Run from repository root in an elevated PowerShell (if required):
     .\ci\install_dev.ps1
 #>
 Set-StrictMode -Version Latest
-if (-Not (Test-Path -Path .venv)) {
-    Write-Host "Creating virtual environment in .venv..."
-    python -m venv .venv
+Write-Host "Installing dev tools without creating a virtualenv (prefers pipx then pip --user)."
+if (Get-Command pipx -ErrorAction SilentlyContinue) {
+    Write-Host "Using pipx to install dev tools from ci/requirements-dev.txt"
+    Get-Content -Path ci/requirements-dev.txt | ForEach-Object {
+        $pkg = $_.Trim()
+        if ([string]::IsNullOrWhiteSpace($pkg)) { return }
+        if (Get-Command $pkg -ErrorAction SilentlyContinue) {
+            Write-Host "$pkg already available"
+        } else {
+            Write-Host "pipx installing $pkg"
+            pipx install $pkg
+        }
+    }
 } else {
-    Write-Host ".venv already exists"
+    Write-Host "pipx not found. Installing user-level packages via pip."
+    python -m pip install --user -r ci/requirements-dev.txt
+    Write-Host "Ensure your user-level bin path is on PATH (e.g. %USERPROFILE%\\.local\\bin or where pip installs user scripts)."
 }
 
-Write-Host "Activating .venv..."
-& .\.venv\Scripts\Activate.ps1
-
-Write-Host "Upgrading pip and installing dev requirements..."
-python -m pip install --upgrade pip
-pip install -r ci/requirements-dev.txt
-
-Write-Host "Installation complete. To run checks: .\ci\run_checks.sh (use bash) or run the individual tools inside the .venv." 
+Write-Host "Installation complete. Run .\ci\run_checks.sh (in Git Bash) or run tools directly from PATH." 

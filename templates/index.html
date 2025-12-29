@@ -79,12 +79,20 @@
             flex: 1 0 360px;
             min-width: 300px;
             max-width: 480px;
+            /* keep panels aligned from the top with a small uniform gap from header */
+            margin-top: 0.6rem;
+            display: flex;
+            flex-direction: column;
         }
 
         .ready-orders-panel {
             flex: 0 0 360px;
             min-width: 260px;
             max-width: 380px;
+            /* match top gap with center panel */
+            margin-top: 0.6rem;
+            display: flex;
+            flex-direction: column;
         }
 
         .category {
@@ -124,7 +132,7 @@
 
         .category-items {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); /* tighter tiles */
+            grid-template-columns: repeat(auto-fill, minmax(var(--menu-tile-min,130px), 1fr)); /* tile width controlled by slider */
             gap: 0.35rem; /* smaller gaps */
             padding: 0.4rem; /* reduce padding */
         }
@@ -800,6 +808,11 @@
                         <input type="text" id="customerName" placeholder="Cliente Ocasional">
                     </div>
                     <div class="form-group">
+                        <label for="customerAddress" id="addressLabel">Dirección</label>
+                        <input type="text" id="customerAddress" placeholder="Calle y número, Ciudad">
+                    </div>
+                    <!-- address input removed -->
+                    <div class="form-group">
                         <label for="orderNotes" id="notesLabel">Notas del pedido</label>
                         <textarea id="orderNotes" placeholder="Ej: Sin cebolla, bien cocido..."></textarea>
                     </div>
@@ -826,11 +839,7 @@
 
             <!-- Ready Orders Panel (right column) -->
             <aside class="ready-orders-panel" style="margin-left:1rem; width:360px; min-width:260px;">
-                <div style="padding:0.5rem 1rem; display:flex; gap:1rem; align-items:center;">
-                    <strong style="font-size:0.95rem;">Estado de Debug:</strong>
-                    <div id="readyDebug" style="background:var(--bg-card);padding:0.25rem 0.5rem;border-radius:6px;">Pedidos listos: <span id="readyCount">0</span></div>
-                    <button id="toggleReadyBtn" class="btn btn-secondary" style="padding:0.25rem 0.5rem;">Ocultar/Mostrar lista</button>
-                </div>
+                <!-- Debug/status controls removed -->
                 <div class="order-header" style="padding:0.5rem 1rem;">
                     <h2 id="readyTitle">🚚 Pedidos Listos para Entrega</h2>
                 </div>
@@ -914,6 +923,11 @@
         if (typeof escapeHtml === 'undefined') {
             function escapeHtml(text) { if (text == null) return ''; const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
         }
+
+        // Address autocomplete (Uruguay only) using Nominatim
+        (function(){
+            // address autocomplete removed
+        })();
 
         // Add simple (non-customized) item to current order
         function addToOrder(item, price){
@@ -1149,6 +1163,7 @@
             selectedItems = {};
             document.getElementById('customerName').value = '';
             document.getElementById('orderNotes').value = '';
+            const addrEl = document.getElementById('customerAddress'); if (addrEl) addrEl.value = '';
             updateOrderDisplay();
         }
 
@@ -1159,6 +1174,7 @@
             }
 
             const customer = document.getElementById('customerName').value.trim() || 'Cliente Ocasional';
+            const address = (document.getElementById('customerAddress') && document.getElementById('customerAddress').value.trim()) || '';
             const notes = document.getElementById('orderNotes').value.trim();
             const total = Object.entries(selectedItems).reduce(
                 (sum, [_, details]) => sum + (details.price * details.quantity), 0
@@ -1170,6 +1186,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         customer: customer,
+                        address: address,
                         items: selectedItems,
                         notes: notes,
                         total: total
@@ -1185,6 +1202,7 @@
                     receipt += `Pedido: ${orderCode}\n`;
                     receipt += `Fecha: ${data.order.timestamp}\n`;
                     receipt += `Cliente: ${customer}\n`;
+                    if(address) receipt += `Dirección: ${address}\n`;
                     receipt += `------------------------\n`;
 
                     for (const [item, details] of Object.entries(selectedItems)) {
