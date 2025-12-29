@@ -315,6 +315,15 @@
             font-size: 1.2rem;
             margin-bottom: 1rem;
         }
+        /* Collapsible completed list */
+        #completedList.collapsed .completed-content {
+            display: none;
+        }
+        #completedList .collapse-toggle {
+            margin-left: auto;
+            padding: 0.18rem 0.4rem;
+            font-size: 0.85rem;
+        }
         
         /* Assigned order timer bar */
         .assigned-timer {
@@ -836,10 +845,11 @@
                     </div>
 
                     <div id="completedList">
-                        <div class="order-header" style="padding:0.4rem 1rem;">
+                        <div class="order-header" style="padding:0.4rem 1rem; display:flex; align-items:center; gap:0.5rem;">
                             <h3 style="margin:0; font-size:0.95rem;">✅ Completados</h3>
+                            <button id="toggleCompletedBtn" class="btn btn-secondary collapse-toggle">Plegar</button>
                         </div>
-                        <div style="padding:0.5rem;">
+                        <div class="completed-content" style="padding:0.5rem;">
                             <div class="order-empty" id="completedEmpty"><p>No hay pedidos completados</p></div>
                             <div id="completedItems"></div>
                         </div>
@@ -1558,6 +1568,31 @@
             if (!list) return;
             list.style.display = list.style.display === 'none' ? 'block' : 'none';
         });
+
+        // Completed list collapse toggle (persisted)
+        function setCompletedCollapsed(collapsed){
+            const el = document.getElementById('completedList');
+            if(!el) return;
+            if(collapsed){
+                el.classList.add('collapsed');
+                document.getElementById('toggleCompletedBtn').textContent = 'Desplegar';
+            } else {
+                el.classList.remove('collapsed');
+                document.getElementById('toggleCompletedBtn').textContent = 'Plegar';
+            }
+            try{ localStorage.setItem('completedCollapsed', collapsed? '1':'0'); }catch(e){}
+        }
+
+        document.getElementById('toggleCompletedBtn')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('completedCollapsed') === '1';
+            setCompletedCollapsed(!cur);
+        });
+
+        // initialize from storage
+        try{
+            const stored = localStorage.getItem('completedCollapsed');
+            if(stored === '1') setCompletedCollapsed(true);
+        }catch(e){}
         // setInterval(loadReadyOrders, 3000); // Commented out to stop continuous polling
 
         // Close modals on overlay click
