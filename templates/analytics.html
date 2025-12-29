@@ -333,9 +333,9 @@
     <!-- Chart Modal (for enlarging charts) -->
     <div id="chartModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:2000;">
         <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;max-width:90%;max-height:90%;padding:1rem;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:auto;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
                 <div id="modalChartTitle" style="font-weight:600;color:var(--fg);"></div>
-                <button id="closeChartModal" class="btn btn-secondary">Cerrar</button>
+                <button id="closeChartModal" class="btn btn-secondary" style="margin-top:0">Cerrar</button>
             </div>
             <div id="modalCanvasHolder" style="width:1100px;max-width:calc(100vw - 4rem);height:600px;max-height:calc(100vh - 6rem);">
                 <!-- canvas will be moved here when modal opens -->
@@ -370,6 +370,20 @@
             if (!el) return null;
             // Prefer reusing the existing canvas context. We ensure charts are destroyed before reuse.
             return el.getContext('2d');
+        }
+
+        // Resolve CSS color tokens (e.g., var(--accent)) to concrete colors for Chart.js
+        function resolveColorToken(s){
+            try{
+                if(!s) return s;
+                s = String(s).trim();
+                const cssVarMatch = s.match(/--[a-zA-Z0-9-_]+/);
+                if(cssVarMatch){
+                    const val = getComputedStyle(document.documentElement).getPropertyValue(cssVarMatch[0]);
+                    if(val && val.trim()) return val.trim();
+                }
+                return s;
+            }catch(e){ return s; }
         }
 
         // Extend translations with analytics-specific terms
@@ -960,14 +974,28 @@
             const dailySalesCtx = getFreshCtx('dailySalesChart');
             if (chartInstances['dailySalesChart']) { try { chartInstances['dailySalesChart'].destroy(); } catch(e){ console.debug('destroy dailySalesChart error', e); } }
             try {
+                // Defensive: ensure analyticsData.daily_sales is an array of [date, number]
+                const rawDaily = Array.isArray(analyticsData.daily_sales) ? analyticsData.daily_sales : [];
+                const dailyPairs = rawDaily.map(([d, v]) => [d, Number(v) || 0]);
+                const labels = dailyPairs.map(([date]) => {
+                    try { return formatDate(date); } catch(e) { return String(date); }
+                });
+                const values = dailyPairs.map(([, sales]) => (isFinite(sales) ? sales : 0));
+
+                if (values.length === 0) {
+                    // provide a tiny placeholder so Chart.js doesn't error
+                    labels.push(formatDate(new Date().toISOString().split('T')[0]));
+                    values.push(0);
+                }
+
                 chartInstances['dailySalesChart'] = new Chart(dailySalesCtx, {
                 type: 'line',
                 data: {
-                    labels: analyticsData.daily_sales.map(([date]) => formatDate(date)),
+                    labels: labels,
                     datasets: [{
                         label: translations[currentLang].dailySalesLabel,
-                        data: analyticsData.daily_sales.map(([, sales]) => sales),
-                        borderColor: 'var(--success)',
+                        data: values,
+                        borderColor: resolveColorToken('var(--success)'),
                         backgroundColor: 'rgba(76, 175, 80, 0.1)',
                         tension: 0.4,
                         fill: true
@@ -989,7 +1017,7 @@
                     }
                 }
                 });
-            } catch (err) { console.error('Failed to create dailySalesChart', err); }
+            } catch (err) { console.error('Failed to create dailySalesChart', err, analyticsData && analyticsData.daily_sales); }
 
             // Daily Orders Chart
             const dailyOrdersCtx = getFreshCtx('dailyOrdersChart');
@@ -1083,17 +1111,23 @@
             const popularItemsCtx = getFreshCtx('popularItemsChart');
             if (chartInstances['popularItemsChart']) { try { chartInstances['popularItemsChart'].destroy(); } catch(e){ console.debug('destroy popularItemsChart error', e); } }
             try {
+                // (use global resolveColorToken)
+
+                const defaultPalette = ['var(--accent)', 'var(--success)', 'var(--warning)', 'var(--danger)', '#5e35b1', '#26a69a', '#ab47bc', '#8d6e63', '#78909c', '#7cb342'];
+                const itemCount = (analyticsData.popular_items || []).length || 0;
+                const bgColors = Array.from({length: itemCount}).map((_, i) => {
+                    if(i < defaultPalette.length) return resolveColorToken(defaultPalette[i]);
+                    const hue = (i * 47) % 360;
+                    return `hsl(${hue}, 65%, 55%)`;
+                });
+
                 chartInstances['popularItemsChart'] = new Chart(popularItemsCtx, {
                 type: 'doughnut',
                 data: {
                     labels: analyticsData.popular_items.map(([item]) => item.length > 20 ? item.substring(0, 20) + '...' : item),
                     datasets: [{
                         data: analyticsData.popular_items.map(([, count]) => count),
-                        backgroundColor: [
-                            'var(--accent)', 'var(--success)', 'var(--warning)', 'var(--danger)',
-                            '#5e35b1', '#26a69a', '#ab47bc', '#8d6e63',
-                            '#78909c', '#7cb342'
-                        ],
+                        backgroundColor: bgColors,
                         borderWidth: 1
                     }]
                 },
