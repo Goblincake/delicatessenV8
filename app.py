@@ -28,6 +28,25 @@ def save_drivers(drivers):
 # --- History (orders) ---
 HISTORY_FILE = 'historial_pedidos.json'
 
+PRODUCT_COSTS_FILE = 'product_costs.json'
+
+def load_product_costs():
+    if os.path.exists(PRODUCT_COSTS_FILE):
+        try:
+            with open(PRODUCT_COSTS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_product_costs(data):
+    try:
+        with open(PRODUCT_COSTS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data or {}, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception:
+        return False
+
 def load_history():
     if os.path.exists(HISTORY_FILE):
         try:
@@ -161,6 +180,28 @@ def clear_history():
 @app.route('/api/menu')
 def get_menu():
     return jsonify(MENU_CATEGORIES)
+
+
+@app.route('/api/product_costs', methods=['GET', 'POST'])
+def api_product_costs():
+    if request.method == 'GET':
+        return jsonify(load_product_costs())
+    # POST: accept JSON map { "Product Name": cost }
+    data = request.get_json() or {}
+    # normalize values to numbers where possible
+    norm = {}
+    for k, v in data.items():
+        try:
+            norm[k] = float(v)
+        except Exception:
+            try:
+                norm[k] = float(str(v).replace(',', '.'))
+            except Exception:
+                norm[k] = v
+    ok = save_product_costs(norm)
+    if ok:
+        return jsonify({'ok': True})
+    return jsonify({'error': 'failed to save'}), 500
 
 @app.route('/api/order', methods=['POST'])
 def create_order():
@@ -303,6 +344,9 @@ def get_analytics():
     except Exception:
         daily_hours = 0.0
 
+    # load product cost overrides
+    product_costs = load_product_costs()
+
     # accumulate per-day intermediate values
     for order in history:
         if order.get('status') != 'completed':
@@ -332,13 +376,22 @@ def get_analytics():
                     qty = 0
             total_items_count += qty
 
-            # Get cost from menu: prefer 'cost_price', fallback to 'cost'
+            # Get cost from overrides first, then menu: prefer 'cost_price', fallback to 'cost'
             item_cost = 0
-            for category, items in MENU_CATEGORIES.items():
-                if item in items:
-                    if isinstance(items[item], dict):
-                        item_cost = items[item].get('cost_price', items[item].get('cost', 0))
-                    break
+            if product_costs and item in product_costs:
+                try:
+                    item_cost = float(product_costs[item])
+                except Exception:
+                    try:
+                        item_cost = float(str(product_costs[item]).replace(',', '.'))
+                    except Exception:
+                        item_cost = 0
+            else:
+                for category, items in MENU_CATEGORIES.items():
+                    if item in items:
+                        if isinstance(items[item], dict):
+                            item_cost = items[item].get('cost_price', items[item].get('cost', 0))
+                        break
 
             order_item_cost_total += item_cost * qty
 

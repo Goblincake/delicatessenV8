@@ -284,6 +284,7 @@
                 <label for="dailyHours">Daily Hours Worked:</label>
                 <input type="number" id="dailyHours" step="0.1" min="0" placeholder="0">
                 <button type="button" class="btn btn-secondary" id="applyProfitConfigBtn" style="margin-left:0.5rem;">Save & Apply</button>
+                <button type="button" class="btn btn-secondary" id="editProductCogsBtn" style="margin-left:0.5rem;">Edit Product COGS</button>
             </div>
             <div style="margin-top:0.5rem;color:var(--fg-muted);font-size:0.9rem;">Note: Daily Net Profit = Daily Revenue - (Product COGS + Rent/30 + (Hourly Wage * Daily Hours) + Courier Cost * Orders)</div>
         </div>
@@ -338,6 +339,22 @@
             </div>
             <div id="modalCanvasHolder" style="width:1100px;max-width:calc(100vw - 4rem);height:600px;max-height:calc(100vh - 6rem);">
                 <!-- canvas will be moved here when modal opens -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Product COGS Modal -->
+    <div id="productCogsModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:2100;">
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;max-width:900px;width:90%;max-height:80%;padding:1rem;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                <div style="font-weight:600;color:var(--fg);">Edit Product COGS</div>
+                <div>
+                    <button id="saveProductCogsBtn" class="btn btn-secondary" style="margin-right:0.5rem;">Save</button>
+                    <button id="closeProductCogsBtn" class="btn btn-secondary">Close</button>
+                </div>
+            </div>
+            <div id="productCogsContent" style="display:grid;grid-template-columns:1fr 120px;gap:0.5rem;align-items:center;">
+                <!-- populated dynamically -->
             </div>
         </div>
     </div>
@@ -679,6 +696,14 @@
                     }
                 });
             });
+
+            // Product COGS modal wiring
+            const editBtn = document.getElementById('editProductCogsBtn');
+            if (editBtn) editBtn.addEventListener('click', async () => { openProductCogsModal(); });
+            const closePCBtn = document.getElementById('closeProductCogsBtn');
+            if (closePCBtn) closePCBtn.addEventListener('click', () => { closeProductCogsModal(); });
+            const savePCBtn = document.getElementById('saveProductCogsBtn');
+            if (savePCBtn) savePCBtn.addEventListener('click', () => { saveProductCogs(); });
         });
 
         function toggleDummyData() {
@@ -696,6 +721,82 @@
                 const storedAuto = localStorage.getItem('analytics.autoRefresh') === 'true';
                 if (storedAuto) startAutoRefresh();
                 loadAnalytics();
+            }
+        }
+
+        async function openProductCogsModal() {
+            const modal = document.getElementById('productCogsModal');
+            const content = document.getElementById('productCogsContent');
+            content.innerHTML = '<div style="grid-column:1/-1;color:var(--fg-muted);">Loading...</div>';
+            modal.style.display = 'flex';
+            try {
+                const menuResp = await fetch('/api/menu');
+                const menu = await menuResp.json();
+                const costsResp = await fetch('/api/product_costs');
+                const costs = await costsResp.json();
+                const flat = [];
+                Object.values(menu).forEach(category => {
+                    Object.keys(category).forEach(name => flat.push(name));
+                });
+                // build inputs
+                content.innerHTML = '';
+                flat.forEach(name => {
+                    const row = document.createElement('div');
+                    row.style.display = 'contents';
+                    const label = document.createElement('div');
+                    label.textContent = name;
+                    label.style.padding = '0.35rem 0.5rem';
+                    label.style.color = 'var(--fg)';
+                    const inputWrap = document.createElement('div');
+                    inputWrap.style.padding = '0.25rem';
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.step = '0.01';
+                    input.min = '0';
+                    input.style.width = '100%';
+                    input.value = costs && costs[name] ? costs[name] : '';
+                    input.setAttribute('data-prod-name', name);
+                    inputWrap.appendChild(input);
+                    content.appendChild(label);
+                    content.appendChild(inputWrap);
+                });
+            } catch (e) {
+                content.innerHTML = '<div style="grid-column:1/-1;color:var(--danger);">Failed to load product list.</div>';
+                console.error('openProductCogsModal error', e);
+            }
+        }
+
+        function closeProductCogsModal() {
+            const modal = document.getElementById('productCogsModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+        }
+
+        async function saveProductCogs() {
+            const content = document.getElementById('productCogsContent');
+            if (!content) return;
+            const inputs = content.querySelectorAll('input[data-prod-name]');
+            const payload = {};
+            inputs.forEach(inp => {
+                const name = inp.getAttribute('data-prod-name');
+                const val = inp.value;
+                if (val !== '') payload[name] = Number(val);
+            });
+            try {
+                const resp = await fetch('/api/product_costs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const data = await resp.json();
+                if (data && data.ok) {
+                    closeProductCogsModal();
+                    // reload analytics now to reflect new costs
+                    const useDummy = document.getElementById('useDummyData') && document.getElementById('useDummyData').checked;
+                    if (useDummy) { analyticsData = generateDummyData(); updateStats(); createCharts(); }
+                    else { loadAnalytics(); }
+                } else {
+                    alert('Failed to save product costs');
+                }
+            } catch (e) {
+                console.error('saveProductCogs error', e);
+                alert('Failed to save product costs');
             }
         }
 
