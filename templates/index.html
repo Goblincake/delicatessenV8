@@ -137,9 +137,12 @@
             cursor: pointer;
             transition: all 0.16s;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
             gap: 0.5rem;
+            min-height: 44px; /* reserve space for two-line names */
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .menu-item:hover {
@@ -159,14 +162,18 @@
             overflow: visible;
             white-space: normal; /* allow wrapping so full product names are visible */
             display: block;
+            flex: 1 1 auto;
+            min-width: 0; /* allow flex children to shrink properly */
         }
 
         .menu-item .item-price {
             color: var(--success);
             font-weight: 600;
             font-size: 0.95rem;
-            flex-shrink: 0;
+            flex: 0 0 auto;
             margin-left: 0.5rem;
+            white-space: nowrap;
+            padding-left: 6px;
         }
 
         /* Order Panel */
