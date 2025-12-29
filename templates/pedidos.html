@@ -35,8 +35,17 @@
     {% include '_header.html' %}
 
     <main>
-        <div id="ordersContainer" class="orders"></div>
-        <div id="empty" class="empty-state" style="display:none">Esperando pedidos...</div>
+        <div class="orders-layout" style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 320px;gap:16px;padding:0 16px">
+            <section>
+                <div id="ordersContainer" class="orders"></div>
+                <div id="empty" class="empty-state" style="display:none">Esperando pedidos...</div>
+            </section>
+            <aside style="">
+                <h3 style="margin:0 0 8px;color:var(--muted);font-weight:700">Historial (Finalizados)</h3>
+                <div id="historyContainer" class="history-list" style="display:block;max-height:70vh;overflow:auto;padding-right:6px"></div>
+                <div id="historyEmpty" class="empty-state" style="display:none">No hay pedidos finalizados.</div>
+            </aside>
+        </div>
     </main>
 
 
@@ -46,6 +55,8 @@
         // Pedidos page script (single, clean implementation)
         const ordersContainer = document.getElementById('ordersContainer');
         const emptyNode = document.getElementById('empty');
+        const historyContainer = document.getElementById('historyContainer');
+        const historyEmpty = document.getElementById('historyEmpty');
         const toast = document.getElementById('toast');
         let lastOrderCount = 0;
 
@@ -90,12 +101,43 @@
             }).join('')
         }
 
+        function renderHistory(orders){
+            const finished = Array.isArray(orders) ? orders.filter(o => (o.status && o.status !== 'pending')) : [];
+            if(finished.length === 0){ historyContainer.innerHTML=''; historyEmpty.style.display='block'; return }
+            historyEmpty.style.display='none';
+            const sorted = [...finished].reverse();
+            historyContainer.innerHTML = sorted.map((order,i)=>{
+                const time = (order.timestamp||'').split(' ')[1]||'';
+                const orderCode = order.code || `P${String(order.id??i).padStart(3,'0')}`;
+                const total = (order.total||0).toLocaleString();
+                // items HTML (compact)
+                const itemsHtml = Object.entries(order.items||{}).map(([name,d])=>{
+                    const qty = (typeof d === 'object') ? (d.quantity||0) : (d||0);
+                    const price = (typeof d === 'object') ? (d.price||0) : 0;
+                    return `<div style="display:flex;justify-content:space-between;font-size:0.9rem;color:var(--muted);padding:2px 0"><div>${escapeHtml(name)} <span style="opacity:.9">×${qty}</span></div><div>$${(price).toLocaleString()}</div></div>`
+                }).join('');
+                const duration = order.finished_at ? formatDuration(order.timestamp, order.finished_at) : '';
+                return `
+                    <div class="order-card" style="padding:8px;margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <div style="font-weight:700">${escapeHtml(orderCode)}</div>
+                            <div style="color:var(--muted);font-size:0.9rem">${escapeHtml(time)}</div>
+                        </div>
+                        <div style="margin-top:6px;color:var(--muted);font-size:0.95rem">${escapeHtml(order.customer||'--')}</div>
+                        <div style="margin-top:6px;color:var(--muted)">Total: $${total}</div>
+                        ${itemsHtml ? `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px">${itemsHtml}</div>` : ''}
+                        ${duration ? `<div style="margin-top:6px;font-size:0.85rem;color:var(--accent)">Tiempo: ${duration}</div>` : ''}
+                    </div>`
+            }).join('')
+        }
+
         async function loadOrders(){
             const orders = await safeFetch('/api/history');
             if(!orders){ console.error('Failed to load orders'); return }
             if(orders.length>lastOrderCount && lastOrderCount>0){ showToast('🆕 ¡Nuevo pedido!') }
             lastOrderCount = orders.length;
             renderOrders(orders.filter(o=>!o.status || o.status==='pending'));
+            renderHistory(orders);
             // Update timers immediately after rendering
             updateTimers();
         }
@@ -139,6 +181,20 @@
             if(!d) return '';
             const diff = Math.floor((Date.now() - d.getTime())/1000);
             if(diff < 0) return '0s';
+            const hours = Math.floor(diff/3600);
+            const minutes = Math.floor((diff%3600)/60);
+            const seconds = diff%60;
+            if(hours>0) return `${hours}h ${String(minutes).padStart(2,'0')}m ${String(seconds).padStart(2,'0')}s`;
+            if(minutes>0) return `${minutes}m ${String(seconds).padStart(2,'0')}s`;
+            return `${seconds}s`;
+        }
+
+        function formatDuration(startTs, endTs){
+            const s = parseTimestamp(startTs);
+            const e = parseTimestamp(endTs) || new Date();
+            if(!s || !e) return '';
+            let diff = Math.floor((e.getTime() - s.getTime())/1000);
+            if(diff < 0) diff = 0;
             const hours = Math.floor(diff/3600);
             const minutes = Math.floor((diff%3600)/60);
             const seconds = diff%60;
