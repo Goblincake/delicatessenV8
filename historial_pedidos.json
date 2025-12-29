@@ -172,5 +172,74 @@
     "status": "completed",
     "finished_at": "2025-12-29 03:34:03",
     "driver": "Bob"
+  },
+  {
+    "id": 9,
+    "code": "P009",
+    "timestamp": "2025-12-29 03:40:01",
+    "customer": "Cliente Ocasional",
+    "items": {
+      "Hamburguesa Completa": {
+        "quantity": 3,
+        "per_unit": 2500.0,
+        "line_total": 7500.0,
+        "options": {
+          "no_lechuga": false,
+          "no_tomate": false,
+          "extra_queso": false
+        }
+      }
+    },
+    "notes": "",
+    "total": 7500.0,
+    "status": "completed",
+    "finished_at": "2025-12-29 03:42:56",
+    "driver": "Goblincake"
+  },
+  {
+    "id": 10,
+    "code": "P010",
+    "timestamp": "2025-12-29 03:50:38",
+    "customer": "Cliente Ocasional",
+    "items": {
+      "Hamburguesa Completa (no_lechuga, no_tomate)": {
+        "quantity": 1,
+        "per_unit": 2500.0,
+        "line_total": 2500.0,
+        "options": {
+          "no_lechuga": true,
+          "no_tomate": true,
+          "extra_queso": false
+        }
+      }
+    },
+    "notes": "",
+    "total": 2500.0,
+    "status": "finished",
+    "finished_at": "2025-12-29 03:50:46",
+    "assigned_at": "2025-12-29 03:57:24",
+    "assigned_ttl": 40,
+    "driver": "Goblincake"
+  },
+  {
+    "id": 11,
+    "code": "P011",
+    "timestamp": "2025-12-29 03:57:38",
+    "customer": "Cliente Ocasional",
+    "items": {
+      "Milanesa Completa": {
+        "quantity": 1,
+        "per_unit": 3200.0,
+        "line_total": 3200.0,
+        "options": null
+      }
+    },
+    "notes": "",
+    "total": 3200.0,
+    "status": "finished",
+    "finished_at": "2025-12-29 03:57:42",
+    "driver": "Bob",
+    "assigned_at": "2025-12-29 03:57:52",
+    "assigned_ttl": 30
   }
 ]

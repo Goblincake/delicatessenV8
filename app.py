@@ -371,6 +371,10 @@ def assign_driver(order_id):
     for order in history:
         if order.get('id') == order_id:
             order['driver'] = driver
+            # record assignment time for client-side timers
+            order['assigned_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # default TTL (minutes) for assignment timers
+            order['assigned_ttl'] = int(order.get('assigned_ttl') or 30)
             save_history(history)
             # Update database
             try:
@@ -379,6 +383,38 @@ def assign_driver(order_id):
                 print(f"Error updating database: {e}")
             return jsonify({'ok': True})
     return jsonify({'error': 'Pedido no encontrado'}), 404
+
+
+@app.route('/api/order/<int:order_id>/extend_assignment', methods=['POST'])
+def extend_assignment(order_id):
+    data = request.get_json() or {}
+    add_minutes = data.get('add_minutes')
+    new_ttl = data.get('new_ttl')
+    if add_minutes is None and new_ttl is None:
+        return jsonify({'error': 'add_minutes or new_ttl required'}), 400
+    try:
+        history = load_history()
+        for order in history:
+            if order.get('id') == order_id:
+                current = int(order.get('assigned_ttl') or 30)
+                if add_minutes is not None:
+                    try:
+                        add = int(add_minutes)
+                    except Exception:
+                        add = 0
+                    current = current + add
+                else:
+                    try:
+                        current = int(new_ttl)
+                    except Exception:
+                        return jsonify({'error': 'invalid new_ttl'}), 400
+                order['assigned_ttl'] = current
+                save_history(history)
+                return jsonify({'ok': True, 'assigned_ttl': current})
+        return jsonify({'error': 'Pedido no encontrado'}), 404
+    except Exception as e:
+        print(f"Error extending assignment TTL: {e}")
+        return jsonify({'error': 'internal error'}), 500
 
 
 @app.route('/api/order/<int:order_id>/unassign', methods=['POST'])

@@ -174,6 +174,7 @@
             border-radius: 6px;
             margin-bottom: 0.5rem;
             padding: 1rem;
+            overflow: hidden;
         }
 
         .ready-orders-list .order-header {
@@ -273,6 +274,151 @@
         .order-header h2 {
             font-size: 1.2rem;
             margin-bottom: 1rem;
+        }
+        
+        /* Assigned order timer bar */
+        .assigned-timer {
+            height: 18px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, hsl(120,80%,40%) 100%, #333 0%);
+            color: var(--fg);
+            padding: 2px 6px;
+            font-size: 0.8rem;
+            display: inline-block;
+            min-width: 54px;
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Driver group / assigned orders layout */
+        .driver-group {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.6rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .driver-header {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            padding-left: 4px;
+        }
+
+        .driver-orders {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .assigned-order-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background-color: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 6px;
+            padding: 0.6rem;
+            overflow: hidden;
+        }
+
+        .assigned-order-card .order-main {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+        }
+
+        .assigned-order-card .order-info {
+            flex: 1 1 0;
+            min-width: 0; /* allow truncation */
+        }
+
+        .assigned-order-card .order-info .order-code {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 0.2rem;
+        }
+
+        .assigned-order-card .order-info .order-customer {
+            color: var(--fg-muted);
+            font-size: 0.92rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .assigned-order-card .order-info .order-items {
+            font-size: 0.9rem;
+            color: var(--fg);
+            line-height: 1.1;
+        }
+
+        /* item line layout inside order-items */
+        .order-item-line {
+            display: flex;
+            gap: 0.6rem;
+            align-items: flex-start;
+        }
+
+        .order-item-line .item-qty {
+            width: 40px;
+            flex-shrink: 0;
+            text-align: right;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .order-item-line .item-body {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .order-item-line .item-name {
+            white-space: normal;
+            font-size: 0.95rem;
+            color: var(--fg);
+            word-break: break-word;
+        }
+
+        .order-item-line .item-options {
+            font-size: 0.82rem;
+            color: var(--fg-muted);
+            margin-top: 2px;
+            margin-left: 2px;
+        }
+
+        .assigned-order-card .order-meta {
+            flex-shrink: 0;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            align-items: flex-end;
+        }
+
+        .assigned-order-card .order-price {
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .assigned-order-card .order-controls {
+            display: flex;
+            gap: 0.4rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .assigned-order-card .order-controls .btn {
+            padding: 0.28rem 0.45rem;
+            font-size: 0.78rem;
+        }
+
+        .assigned-timer.overdue {
+            box-shadow: 0 0 8px rgba(244,67,54,0.5);
+            font-weight: 700;
         }
 
         .form-group {
@@ -1239,29 +1385,43 @@
                     grouped[o.driver].push(o);
                 });
                 assignedItemsEl.innerHTML = Object.entries(grouped).map(([driver, orders]) => `
-                    <div class="driver-group" style="margin-bottom:1rem; border:1px solid var(--border); border-radius:8px; padding:0.75rem;">
-                        <div style="font-weight:700; margin-bottom:0.5rem;">${escapeHtml(driver)}</div>
+                    <div class="driver-group">
+                        <div class="driver-header">${escapeHtml(driver)}</div>
+                        <div class="driver-orders">
                         ${orders.map(o => {
                             const code = o.code || `P${String(o.id).padStart(3,'0')}`;
-                            const itemsSummary = Object.entries(o.items).map(([it,d])=> `${d.quantity}x ${escapeHtml(it)}`).join(', ');
+                            const itemsHtml = Object.entries(o.items).map(([it,d])=> {
+                                // remove parenthetical summary added to display names (e.g. "Item (opt1, opt2)")
+                                const nameClean = String(it).replace(/\s*\([^)]*\)\s*$/, '');
+                                const opts = (d && d.options) ? Object.keys(d.options).filter(k=>d.options[k]).join(', ') : '';
+                                return `<div class="order-item-line"><span class="item-qty">${d.quantity}x</span><div class="item-body"><div class="item-name">${escapeHtml(nameClean)}</div>${opts?`<div class="item-options">${escapeHtml(opts)}</div>`:''}</div></div>`;
+                            }).join('');
+                            // use assigned_at when available; fallback to timestamp
+                            const assignedAt = o.assigned_at || o.timestamp || '';
+                            // prefer server-provided TTL if present, otherwise fallback to configured default
+                            const ttl = (o.assigned_ttl !== undefined && o.assigned_ttl !== null) ? o.assigned_ttl : Number(localStorage.getItem('assigned.default_ttl') || 30);
                             return `
-                                <div class="order-card" style="margin-bottom:0.5rem; padding:0.5rem; background:var(--bg-secondary);">
-                                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                                        <div>
-                                            <div style="font-weight:600">${code} • ${escapeHtml(o.customer)}</div>
-                                            <div style="font-size:0.85rem; color:var(--fg-muted)">${itemsSummary}</div>
+                                <div class="assigned-order-card">
+                                    <div class="order-main">
+                                        <div class="order-info">
+                                            <div class="order-code">${code}</div>
+                                            <div class="order-customer">${escapeHtml(o.customer)}</div>
+                                            <div class="order-items">${itemsHtml}${o.notes?'<div style="margin-top:6px;color:var(--fg-muted);font-size:0.85rem">📝 '+escapeHtml(o.notes)+'</div>':''}</div>
                                         </div>
-                                        <div style="text-align:right;">
-                                            <div style="font-size:0.9rem;">$${o.total}</div>
-                                            <div style="margin-top:0.25rem;">
-                                                <button class="btn btn-success complete-btn" data-orderid="${o.id}" style="padding:0.2rem 0.4rem; font-size:0.8rem;">${translations[currentLang].complete}</button>
-                                                <button class="btn btn-secondary unassign-btn" data-orderid="${o.id}" style="padding:0.2rem 0.4rem; font-size:0.8rem;">${translations[currentLang].unassign}</button>
-                                            </div>
+                                        <div class="order-meta">
+                                            <div class="order-price">$${o.total}</div>
+                                            <div class="assigned-timer" data-orderid="${o.id}" data-assigned-at="${assignedAt}" data-ttl="${ttl}"></div>
                                         </div>
+                                    </div>
+                                    <div class="order-controls">
+                                        <button class="btn btn-success complete-btn" data-orderid="${o.id}">${translations[currentLang].complete}</button>
+                                        <button class="btn btn-secondary unassign-btn" data-orderid="${o.id}">${translations[currentLang].unassign}</button>
+                                        <button class="btn btn-secondary extend-btn" data-orderid="${o.id}">Extender</button>
                                     </div>
                                 </div>
                             `;
                         }).join('')}
+                        </div>
                     </div>
                 `).join('');
             }
@@ -1292,6 +1452,70 @@
                     `;
                 }).join('');
             }
+            // initialize assigned timers after rendering
+            initAssignedTimers();
+        }
+
+        // Initialize and update assigned timers
+        function initAssignedTimers(){
+            try{ if(window._assignedTimerInterval) clearInterval(window._assignedTimerInterval); }catch(e){}
+            function updateTimers(){
+                document.querySelectorAll('.assigned-timer').forEach(el=>{
+                    try{
+                        const orderId = el.getAttribute('data-orderid');
+                        const assignedAtStr = el.getAttribute('data-assigned-at') || '';
+                        const baseTtl = Number(el.getAttribute('data-ttl') || 30);
+                        const override = Number(localStorage.getItem('assigned.ttl.'+orderId));
+                        const ttl = (!isNaN(override) && override > 0) ? override : baseTtl;
+                        let assignedAt = Date.parse(assignedAtStr);
+                        if(isNaN(assignedAt) && assignedAtStr.includes(' ')) assignedAt = Date.parse(assignedAtStr.replace(' ', 'T'));
+                        if(isNaN(assignedAt)){
+                            el.textContent = '--'; el.style.background = ''; el.classList.remove('overdue');
+                            return;
+                        }
+                        const elapsedMs = Date.now() - assignedAt;
+                        const elapsedSec = Math.floor(elapsedMs/1000);
+                        const elapsedMin = elapsedMs/60000;
+                        const pct = Math.max(0, Math.min(1, elapsedMin / ttl));
+                        const hue = Math.round(120 - 120 * pct);
+                        const remainingSec = Math.max(0, Math.round(ttl*60 - elapsedSec));
+                        const remainingText = remainingSec <= 0 ? 'Venc.' : `${Math.floor(remainingSec/60)}m ${String(remainingSec%60).padStart(2,'0')}s`;
+                        const filledPct = Math.round((1 - pct) * 100);
+                        el.style.background = `linear-gradient(90deg, hsl(${hue},80%,40%) ${filledPct}%, #333 ${filledPct}%)`;
+                        el.textContent = remainingText;
+                        if(elapsedMin >= ttl) el.classList.add('overdue'); else el.classList.remove('overdue');
+                    }catch(e){ console.error('timer update error', e); }
+                });
+            }
+            updateTimers();
+            window._assignedTimerInterval = setInterval(updateTimers, 1000);
+
+            // attach extend handlers
+            document.querySelectorAll('.extend-btn').forEach(btn=>{
+                if(btn._attached) return; btn._attached = true;
+                btn.addEventListener('click', async (e)=>{
+                    const oid = btn.getAttribute('data-orderid');
+                    const addMinutes = 10;
+                    try{
+                        const resp = await fetch(`/api/order/${oid}/extend_assignment`, {
+                            method: 'POST', headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({ add_minutes: addMinutes })
+                        });
+                        if(resp.ok){
+                            const jr = await resp.json();
+                            const newTtl = jr.assigned_ttl || (Number(document.querySelector(`.assigned-timer[data-orderid="${oid}"]`).getAttribute('data-ttl') || 30) + addMinutes);
+                            // update element attribute so timers use server TTL
+                            const el = document.querySelector(`.assigned-timer[data-orderid="${oid}"]`);
+                            if(el) el.setAttribute('data-ttl', String(newTtl));
+                            showToast('Extendido +'+addMinutes+' min', 'success');
+                            // immediate refresh
+                            updateTimers();
+                        } else {
+                            showToast('No se pudo extender', 'error');
+                        }
+                    }catch(err){ console.error('extend error', err); showToast('Error de conexión', 'error'); }
+                });
+            });
         }
 
         // (duplicate block removed) — ready orders are loaded once above and handlers attached
