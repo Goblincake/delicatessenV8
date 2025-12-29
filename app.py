@@ -243,6 +243,11 @@ def update_order_status(order_id):
     for order in history:
         if order.get('id') == order_id:
             order['status'] = new_status
+            # record finished timestamp when moving out of pending
+            if new_status != 'pending':
+                order['finished_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                order.pop('finished_at', None)
             save_history(history)
             # Update database
             try:
@@ -294,6 +299,7 @@ def complete_order(order_id):
     for order in history:
         if order.get('id') == order_id:
             order['status'] = 'completed'
+            order['finished_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             save_history(history)
             # Update database
             try:

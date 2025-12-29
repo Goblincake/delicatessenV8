@@ -2,20 +2,98 @@
   {
     "id": 1,
     "code": "P001",
-    "timestamp": "2025-12-28 23:08:25",
+    "timestamp": "2025-12-29 01:52:46",
     "customer": "Cliente Ocasional",
     "items": {
-      "Agua Saborizada 500ml": {
-        "price": 600,
+      "Hamburguesa con Queso": {
+        "price": 2000,
         "quantity": 3
-      },
-      "Milanesa con Puré": {
-        "price": 2700,
+      }
+    },
+    "notes": "",
+    "total": 6000,
+    "status": "completed",
+    "driver": "Goblincake"
+  },
+  {
+    "id": 2,
+    "code": "P002",
+    "timestamp": "2025-12-29 01:55:22",
+    "customer": "Cliente Ocasional",
+    "items": {
+      "Milanesa Completa": {
+        "price": 3200,
+        "quantity": 1
+      }
+    },
+    "notes": "",
+    "total": 3200,
+    "status": "completed",
+    "driver": "Goblincake"
+  },
+  {
+    "id": 3,
+    "code": "P003",
+    "timestamp": "2025-12-29 02:03:57",
+    "customer": "Cliente Ocasional",
+    "items": {
+      "Pizza Fugazzeta": {
+        "price": 3300,
         "quantity": 2
       }
     },
     "notes": "",
-    "total": 7200,
+    "total": 6600,
+    "status": "completed",
+    "driver": "Goblincake"
+  },
+  {
+    "id": 4,
+    "code": "P004",
+    "timestamp": "2025-12-29 02:04:47",
+    "customer": "Cliente Ocasional",
+    "items": {
+      "Milanesa Completa": {
+        "price": 3200,
+        "quantity": 2
+      },
+      "Tarta de Chocolate": {
+        "price": 1100,
+        "quantity": 3
+      }
+    },
+    "notes": "",
+    "total": 9700,
     "status": "finished"
+  },
+  {
+    "id": 5,
+    "code": "P005",
+    "timestamp": "2025-12-29 02:04:58",
+    "customer": "Cliente Ocasional",
+    "items": {
+      "Pizza Rúcula y Jamón Crudo": {
+        "price": 3800,
+        "quantity": 1
+      }
+    },
+    "notes": "",
+    "total": 3800,
+    "status": "finished"
+  },
+  {
+    "id": 6,
+    "code": "P006",
+    "timestamp": "2025-12-29 02:05:19",
+    "customer": "Cliente Ocasional",
+    "items": {
+      "Bauru con Huevo": {
+        "price": 2000,
+        "quantity": 4
+      }
+    },
+    "notes": "",
+    "total": 8000,
+    "status": "pending"
   }
 ]
