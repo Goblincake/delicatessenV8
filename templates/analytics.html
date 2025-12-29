@@ -1111,51 +1111,64 @@
             // (profit margin chart removed)
         }
 
-        // Modal logic: move canvas into modal to preserve Chart instance and interactivity
+        // Modal logic: clone canvas into modal to avoid moving original canvas (prevents disappearance on updates)
         let modalOpenChartId = null;
         function openChartModal(chartId, title) {
             if (modalOpenChartId) return;
             const chart = chartInstances[chartId];
-            const canvas = document.getElementById(chartId);
-            if (!chart || !canvas) return;
-
-            // store original parent and nextSibling for restore
-            canvas._origParent = canvas.parentNode;
-            canvas._origNext = canvas.nextSibling;
+            if (!chart) return;
 
             const holder = document.getElementById('modalCanvasHolder');
             const modal = document.getElementById('chartModal');
             const titleEl = document.getElementById('modalChartTitle');
             titleEl.textContent = title || '';
 
-            // move canvas into modal
-            holder.appendChild(canvas);
-            modal.style.display = 'flex';
-            modalOpenChartId = chartId;
+            // create a cloned canvas for the modal so the original chart remains in-place
+            const modalCanvas = document.createElement('canvas');
+            const cloneId = chartId + '_modal_clone';
+            modalCanvas.id = cloneId;
+            // style rules to make it behave like canvas inside modal
+            modalCanvas.style.width = '100%';
+            modalCanvas.style.height = '100%';
+            holder.appendChild(modalCanvas);
 
-            // Resize chart to fit modal
-            try { chart.resize(); } catch (e) { console.debug('modal resize error', e); }
+            // create a snapshot of the chart data/options (shallow copy where appropriate)
+            let cloneConfig = null;
+            try {
+                cloneConfig = {
+                    type: chart.config.type,
+                    data: JSON.parse(JSON.stringify(chart.data)),
+                    options: JSON.parse(JSON.stringify(chart.options || {}))
+                };
+            } catch (e) {
+                // fallback: reuse config if deep copy fails
+                cloneConfig = { type: chart.config.type, data: chart.data, options: chart.options };
+            }
+
+            try {
+                const ctx = modalCanvas.getContext('2d');
+                chartInstances[cloneId] = new Chart(ctx, cloneConfig);
+                modal.style.display = 'flex';
+                modalOpenChartId = cloneId;
+            } catch (e) {
+                console.error('Failed to create modal chart clone', e);
+            }
         }
 
         function closeChartModal() {
-            const canvas = document.getElementById(modalOpenChartId);
-            const chart = chartInstances[modalOpenChartId];
             const modal = document.getElementById('chartModal');
-            if (!canvas) { modal.style.display = 'none'; modalOpenChartId = null; return; }
+            if (!modalOpenChartId) { modal.style.display = 'none'; return; }
 
-            // restore canvas to original parent
-            const origParent = canvas._origParent;
-            const origNext = canvas._origNext;
-            if (origParent) {
-                if (origNext) origParent.insertBefore(canvas, origNext); else origParent.appendChild(canvas);
-            }
-
-            // hide modal
+            const cloneId = modalOpenChartId;
+            const cloneCanvas = document.getElementById(cloneId);
+            const cloneChart = chartInstances[cloneId];
+            try {
+                if (cloneChart) { try { cloneChart.destroy(); } catch(e){ } }
+            } catch (e) { console.debug('error destroying clone chart', e); }
+            if (cloneCanvas && cloneCanvas.parentNode) cloneCanvas.parentNode.removeChild(cloneCanvas);
+            delete chartInstances[cloneId];
             modal.style.display = 'none';
             modalOpenChartId = null;
-
-            // Resize chart back
-            try { if (chart) chart.resize(); } catch (e) { console.debug('modal restore resize error', e); }
         }
 
         // Wire modal close button
