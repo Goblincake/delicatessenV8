@@ -721,6 +721,89 @@
             showToast(`${item} agregado`);
         }
 
+        function addCustomizedToOrder(displayName, originalName, price, quantity, options){
+            const key = displayName;
+            if (selectedItems[key]){
+                selectedItems[key].quantity += quantity;
+            } else {
+                selectedItems[key] = { price: price, quantity: quantity, options: options, original_name: originalName };
+            }
+            updateOrderDisplay();
+            showToast(`${originalName} agregado`);
+        }
+
+        async function openCustomization(itemName){
+            try{
+                const r = await fetch('/api/menu');
+                if(!r.ok) return;
+                const menu = await r.json();
+                let itemData = null;
+                for(const cat of Object.keys(menu)){
+                    const items = menu[cat];
+                    if(items[itemName]){ itemData = items[itemName]; break }
+                }
+                if(!itemData){ showToast('Item no encontrado', 'error'); return }
+
+                const mods = itemData.modifiers || [];
+                let modalHtml = `<div style="padding:12px;max-width:420px">`;
+                modalHtml += `<h3 style="margin:0 0 8px">Personalizar ${escapeHtml(itemName)}</h3>`;
+                modalHtml += `<div id="modOptions">`;
+                mods.forEach(m => {
+                    if(m.type === 'toggle'){
+                        modalHtml += `<label style="display:flex;justify-content:space-between;padding:6px 0"><span>${escapeHtml(m.label)}</span><input type=checkbox data-mod="${m.id}" ${m.default? 'checked':''}></label>`;
+                    }
+                });
+                modalHtml += `</div>`;
+                modalHtml += `<div style="margin-top:8px;display:flex;gap:8px;align-items:center"><label>Cantidad: <input id="modQty" type=number value=1 min=1 style="width:64px;margin-left:6px"></label><div id="modPrice" style="margin-left:auto;font-weight:700">$${itemData.price}</div></div>`;
+                modalHtml += `<div style="margin-top:12px;text-align:right"><button onclick="closeModal('customModal')" class="btn-secondary" style="margin-right:8px">Cancelar</button><button class="btn-primary" id="confirmModBtn">Agregar</button></div>`;
+                modalHtml += `</div>`;
+
+                let holder = document.getElementById('customModal');
+                if(!holder){
+                    holder = document.createElement('div');
+                    holder.id = 'customModal';
+                    holder.className = 'modal-overlay';
+                    holder.innerHTML = `<div class="modal">${modalHtml}</div>`;
+                    document.body.appendChild(holder);
+                    holder.addEventListener('click', (ev)=>{ if(ev.target === holder) closeModal('customModal') });
+                } else {
+                    holder.innerHTML = `<div class="modal">${modalHtml}</div>`;
+                    holder.style.display = 'block';
+                }
+
+                const updatePreview = async ()=>{
+                    const opts = {};
+                    holder.querySelectorAll('[data-mod]').forEach(ch=>{ opts[ch.getAttribute('data-mod')] = !!ch.checked });
+                    const qty = parseInt(document.getElementById('modQty').value)||1;
+                    try{
+                        const q = await fetch('/api/quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item: itemName, details:{quantity: qty, options: opts}})});
+                        if(q.ok){ const jr = await q.json(); document.getElementById('modPrice').textContent = '$'+jr.price }
+                    }catch(e){/*ignore*/}
+                };
+
+                holder.querySelectorAll('[data-mod]').forEach(ch=>ch.addEventListener('change', updatePreview));
+                holder.querySelector('#modQty').addEventListener('input', updatePreview);
+
+                updatePreview();
+
+                holder.querySelector('#confirmModBtn').addEventListener('click', async ()=>{
+                    const opts = {};
+                    holder.querySelectorAll('[data-mod]').forEach(ch=>{ opts[ch.getAttribute('data-mod')] = !!ch.checked });
+                    const qty = parseInt(document.getElementById('modQty').value)||1;
+                    const q = await fetch('/api/quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item: itemName, details:{quantity: qty, options: opts}})});
+                    let price = itemData.price;
+                    if(q.ok){ const jr = await q.json(); price = jr.price }
+                    const summary = Object.keys(opts).filter(k=>opts[k]).join(', ');
+                    const displayName = summary ? `${itemName} (${summary})` : itemName;
+                    addCustomizedToOrder(displayName, itemName, Math.round(price/qty), qty, opts);
+                    closeModal('customModal');
+                });
+
+                function closeModal(id){ const el = document.getElementById(id); if(el) el.style.display='none'; }
+
+            }catch(e){ console.error(e); showToast('Error al abrir personalización') }
+        }
+
         function removeFromOrder(item) {
             if (selectedItems[item]) {
                 if (selectedItems[item].quantity > 1) {

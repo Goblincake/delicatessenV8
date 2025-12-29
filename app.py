@@ -63,7 +63,11 @@ def save_history(history):
 # Menu categories with prices and costs (in ARS)
 MENU_CATEGORIES = {
     "Hamburguesas": {
-        "Hamburguesa Completa": {"price": 2500, "cost": 800},
+        "Hamburguesa Completa": {"price": 2500, "cost": 800, "modifiers": [
+            {"id": "no_lechuga", "label": "Sin lechuga", "type": "toggle", "price_delta": 0, "default": False},
+            {"id": "no_tomate", "label": "Sin tomate", "type": "toggle", "price_delta": 0, "default": False},
+            {"id": "extra_queso", "label": "Extra queso", "type": "toggle", "price_delta": 200, "default": False}
+        ]},
         "Hamburguesa Simple": {"price": 1800, "cost": 600},
         "Hamburguesa con Queso": {"price": 2000, "cost": 650},
         "Hamburguesa Especial": {"price": 3000, "cost": 1000},
@@ -105,6 +109,79 @@ MENU_CATEGORIES = {
         "Tiramisú": {"price": 1300, "cost": 450}
     }
 }
+
+
+def find_menu_item(name):
+    for cat, items in MENU_CATEGORIES.items():
+        for iname, idata in items.items():
+            if iname == name:
+                return idata
+    return None
+
+
+def compute_item_price(item_name, details):
+    """Compute validated line price and breakdown for an item with modifiers.
+    details can be: integer quantity, or dict { quantity, options } or { quantity }
+    Returns tuple (line_total, per_unit_price, breakdown_dict)
+    """
+    # allow details to supply original_name when UI sends a display key
+    item_data = find_menu_item(item_name)
+    if item_data is None and isinstance(details, dict) and details.get('original_name'):
+        item_data = find_menu_item(details.get('original_name'))
+        # use the canonical name for later
+        item_name = details.get('original_name')
+    if item_data is None:
+        return (0, 0, {'error': 'item-not-found'})
+
+    # base price
+    base_price = item_data.get('price') if isinstance(item_data, dict) else float(item_data)
+    try:
+        base_price = float(base_price)
+    except Exception:
+        base_price = 0.0
+
+    qty = 1
+    options = {}
+    if isinstance(details, dict):
+        qty = int(details.get('quantity', 1) or 1)
+        options = details.get('options', {}) or {}
+    else:
+        try:
+            qty = int(details)
+        except Exception:
+            qty = 1
+
+    per_unit = base_price
+    breakdown = {'base': base_price, 'modifiers': []}
+    for mod in (item_data.get('modifiers') if isinstance(item_data, dict) else []):
+        mid = mod.get('id')
+        if not mid:
+            continue
+        selected = options.get(mid)
+        # for toggle: selected true means apply price_delta
+        if mod.get('type') == 'toggle' and selected:
+            delta = float(mod.get('price_delta', 0) or 0)
+            per_unit += delta
+            breakdown['modifiers'].append({'id': mid, 'label': mod.get('label'), 'delta': delta})
+        # other types (choice/multiple) can be added later
+
+    line_total = per_unit * max(qty, 1)
+    breakdown['per_unit'] = per_unit
+    breakdown['quantity'] = qty
+    breakdown['line_total'] = line_total
+    return (line_total, per_unit, breakdown)
+
+
+@app.route('/api/quote', methods=['POST'])
+def api_quote():
+    data = request.get_json() or {}
+    item = data.get('item')
+    if not item:
+        return jsonify({'error': 'item required'}), 400
+    details = data.get('details', 1)
+    line_total, per_unit, breakdown = compute_item_price(item, details)
+    return jsonify({'price': line_total, 'per_unit': per_unit, 'breakdown': breakdown})
+
 
 # --- Routes ---
 @app.route('/')
@@ -211,14 +288,29 @@ def create_order():
     history = load_history()
     order_num = len(history) + 1
     order_code = f"P{order_num:03d}"
+    # Validate and compute prices server-side
+    raw_items = data.get('items', {})
+    validated_items = {}
+    total = 0.0
+    for name, details in raw_items.items():
+        line_total, per_unit, breakdown = compute_item_price(name, details)
+        qty = breakdown.get('quantity', 1)
+        validated_items[name] = {
+            'quantity': qty,
+            'per_unit': per_unit,
+            'line_total': line_total,
+            'options': (details.get('options') if isinstance(details, dict) else {})
+        }
+        total += line_total
+
     order = {
         'id': order_num,
         'code': order_code,
         'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         'customer': data.get('customer', '').strip() or 'Cliente Ocasional',
-        'items': data.get('items', {}),
+        'items': validated_items,
         'notes': data.get('notes', '').strip(),
-        'total': data.get('total', 0),
+        'total': total,
         'status': 'pending'
     }
     history.append(order)
