@@ -2,98 +2,100 @@
   {
     "id": 1,
     "code": "P001",
-    "timestamp": "2025-12-29 01:52:46",
+    "timestamp": "2025-12-29 02:45:51",
     "customer": "Cliente Ocasional",
     "items": {
-      "Hamburguesa con Queso": {
-        "price": 2000,
-        "quantity": 3
+      "Pizza Rúcula y Jamón Crudo": {
+        "quantity": 6,
+        "per_unit": 3800.0,
+        "line_total": 22800.0,
+        "options": null
       }
     },
     "notes": "",
-    "total": 6000,
+    "total": 22800.0,
     "status": "completed",
+    "finished_at": "2025-12-29 02:46:44",
     "driver": "Goblincake"
   },
   {
     "id": 2,
     "code": "P002",
-    "timestamp": "2025-12-29 01:55:22",
+    "timestamp": "2025-12-29 02:45:55",
     "customer": "Cliente Ocasional",
     "items": {
-      "Milanesa Completa": {
-        "price": 3200,
-        "quantity": 1
+      "Pizza Fugazzeta": {
+        "quantity": 3,
+        "per_unit": 3300.0,
+        "line_total": 9900.0,
+        "options": null
       }
     },
     "notes": "",
-    "total": 3200,
+    "total": 9900.0,
     "status": "completed",
+    "finished_at": "2025-12-29 02:46:45",
     "driver": "Goblincake"
   },
   {
     "id": 3,
     "code": "P003",
-    "timestamp": "2025-12-29 02:03:57",
+    "timestamp": "2025-12-29 02:46:01",
     "customer": "Cliente Ocasional",
     "items": {
-      "Pizza Fugazzeta": {
-        "price": 3300,
-        "quantity": 2
+      "Hamburguesa Completa": {
+        "quantity": 1,
+        "per_unit": 2500.0,
+        "line_total": 2500.0,
+        "options": {
+          "no_lechuga": false,
+          "no_tomate": false,
+          "extra_queso": false
+        }
       }
     },
     "notes": "",
-    "total": 6600,
+    "total": 2500.0,
     "status": "completed",
+    "finished_at": "2025-12-29 02:46:46",
     "driver": "Goblincake"
   },
   {
     "id": 4,
     "code": "P004",
-    "timestamp": "2025-12-29 02:04:47",
+    "timestamp": "2025-12-29 02:49:03",
     "customer": "Cliente Ocasional",
     "items": {
-      "Milanesa Completa": {
-        "price": 3200,
-        "quantity": 2
-      },
-      "Tarta de Chocolate": {
-        "price": 1100,
-        "quantity": 3
+      "Pizza Rúcula y Jamón Crudo": {
+        "quantity": 3,
+        "per_unit": 3800.0,
+        "line_total": 11400.0,
+        "options": null
       }
     },
     "notes": "",
-    "total": 9700,
-    "status": "finished"
+    "total": 11400.0,
+    "status": "completed",
+    "finished_at": "2025-12-29 02:49:25",
+    "driver": "Goblincake"
   },
   {
     "id": 5,
     "code": "P005",
-    "timestamp": "2025-12-29 02:04:58",
+    "timestamp": "2025-12-29 02:50:04",
     "customer": "Cliente Ocasional",
     "items": {
       "Pizza Rúcula y Jamón Crudo": {
-        "price": 3800,
-        "quantity": 1
+        "quantity": 4,
+        "per_unit": 3800.0,
+        "line_total": 15200.0,
+        "options": null
       }
     },
     "notes": "",
-    "total": 3800,
-    "status": "finished"
-  },
-  {
-    "id": 6,
-    "code": "P006",
-    "timestamp": "2025-12-29 02:05:19",
-    "customer": "Cliente Ocasional",
-    "items": {
-      "Bauru con Huevo": {
-        "price": 2000,
-        "quantity": 4
-      }
-    },
-    "notes": "",
-    "total": 8000,
-    "status": "pending"
+    "total": 15200.0,
+    "status": "completed",
+    "finished_at": "2025-12-29 02:50:16",
+    "driver": "Goblincake"
   }
 ]

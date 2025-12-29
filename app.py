@@ -153,14 +153,26 @@ def compute_item_price(item_name, details):
 
     per_unit = base_price
     breakdown = {'base': base_price, 'modifiers': []}
-    for mod in (item_data.get('modifiers') if isinstance(item_data, dict) else []):
+    # defensive: modifiers may be missing or null in data; coerce to empty list
+    mods = []
+    if isinstance(item_data, dict):
+        mods = item_data.get('modifiers') or []
+        if not isinstance(mods, list):
+            mods = []
+    for mod in mods:
+        # ensure mod is a dict
+        if not isinstance(mod, dict):
+            continue
         mid = mod.get('id')
         if not mid:
             continue
         selected = options.get(mid)
         # for toggle: selected true means apply price_delta
         if mod.get('type') == 'toggle' and selected:
-            delta = float(mod.get('price_delta', 0) or 0)
+            try:
+                delta = float(mod.get('price_delta', 0) or 0)
+            except Exception:
+                delta = 0.0
             per_unit += delta
             breakdown['modifiers'].append({'id': mid, 'label': mod.get('label'), 'delta': delta})
         # other types (choice/multiple) can be added later
@@ -449,7 +461,8 @@ def get_analytics():
 
     # accumulate per-day intermediate values
     for order in history:
-        if order.get('status') != 'completed':
+        # Treat both 'completed' and legacy 'finished' statuses as completed for analytics
+        if order.get('status') not in ['completed', 'finished']:
             continue
         timestamp = order.get('timestamp', '1970-01-01 00:00:00')
         date = timestamp.split(' ')[0]
@@ -573,7 +586,8 @@ def get_analytics():
     sorted_hourly = sorted(hourly_orders.items())
     sorted_items = sorted(popular_items.items(), key=lambda x: x[1], reverse=True)[:10]
     
-    finished = [o for o in history if o.get('status') == 'completed']
+    # Consider both 'completed' and legacy 'finished' as completed for totals
+    finished = [o for o in history if o.get('status') in ['completed', 'finished']]
     total_revenue = sum(o.get('total', 0) for o in finished)
     total_costs = sum(daily_costs.values())
     total_profits = sum(daily_profits.values())
@@ -595,6 +609,7 @@ def get_analytics():
         'daily_orders': sorted([(d, daily_orders.get(d, 0)) for d, _ in sorted_daily]),
         'daily_costs': sorted([(d, daily_costs.get(d, 0)) for d, _ in sorted_daily]),
         'daily_profits': sorted([(d, daily_profits.get(d, 0)) for d, _ in sorted_daily]),
+        'daily_breakdowns': daily_breakdowns,
         'hourly_orders': sorted_hourly,
         'popular_items': sorted_items,
         'item_costs': sorted(item_costs.items(), key=lambda x: x[1], reverse=True)[:10],

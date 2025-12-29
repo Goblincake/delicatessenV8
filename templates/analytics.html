@@ -941,12 +941,12 @@
 
         function updateStats() {
             document.getElementById('totalOrders').textContent = analyticsData.total_orders;
-            document.getElementById('totalRevenue').textContent = `$${analyticsData.total_revenue.toLocaleString()}`;
-            document.getElementById('avgOrderValue').textContent = `$${analyticsData.avg_order_value.toLocaleString()}`;
-            document.getElementById('totalCosts').textContent = `$${analyticsData.total_costs.toLocaleString()}`;
-            document.getElementById('totalProfits').textContent = `$${analyticsData.total_profits.toLocaleString()}`;
+            document.getElementById('totalRevenue').textContent = `$${Number(analyticsData.total_revenue).toLocaleString(undefined,{maximumFractionDigits:0})}`;
+            document.getElementById('avgOrderValue').textContent = `$${Number(analyticsData.avg_order_value).toLocaleString(undefined,{maximumFractionDigits:0})}`;
+            document.getElementById('totalCosts').textContent = `$${Number(analyticsData.total_costs).toLocaleString(undefined,{maximumFractionDigits:0})}`;
+            document.getElementById('totalProfits').textContent = `$${Number(analyticsData.total_profits).toLocaleString(undefined,{maximumFractionDigits:0})}`;
             document.getElementById('profitMargin').textContent = `${analyticsData.profit_margin}%`;
-            document.getElementById('avgProfitPerOrder').textContent = `$${analyticsData.avg_profit_per_order.toLocaleString()}`;
+            document.getElementById('avgProfitPerOrder').textContent = `$${Number(analyticsData.avg_profit_per_order).toLocaleString(undefined,{maximumFractionDigits:0})}`;
 
             // Calculate today's orders
             const today = new Date().toISOString().split('T')[0];
@@ -983,7 +983,7 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: value => `$${value.toLocaleString()}`
+                                callback: value => `$${Number(value).toLocaleString(undefined,{maximumFractionDigits:0})}`
                             }
                         }
                     }
@@ -1137,16 +1137,77 @@
                 },
                 options: {
                     onClick: function(evt, elements) {
-                        if (!elements || elements.length === 0) return;
-                        const el = elements[0];
-                        const idx = el.index;
-                        const date = analyticsData.daily_costs[idx][0];
-                        const breakdownArr = analyticsData.daily_breakdowns || [];
-                        let breakdown = null;
-                        for (const [d, b] of breakdownArr) {
-                            if (d === date) { breakdown = b; break; }
+                        try {
+                            console.debug('dailyCostsProfitsChart onClick', { elements, evt });
+                            if (!elements || elements.length === 0) return;
+                            const el = elements[0];
+                            // Chart.js element index can be in different places depending on version
+                            const idx = (typeof el.index !== 'undefined') ? el.index : (el.element && el.element.index);
+
+                            let date = null;
+                            if (typeof idx === 'number' && analyticsData && Array.isArray(analyticsData.daily_costs) && analyticsData.daily_costs[idx]) {
+                                date = analyticsData.daily_costs[idx][0];
+                            } else {
+                                // fallback: try reading from chart labels if available
+                                try {
+                                    const chart = chartInstances['dailyCostsProfitsChart'];
+                                    if (chart && chart.data && Array.isArray(chart.data.labels) && typeof idx === 'number') {
+                                        date = chart.data.labels[idx];
+                                    }
+                                } catch (e) { console.debug('fallback label read failed', e); }
+                            }
+
+                            const breakdownArr = analyticsData.daily_breakdowns || [];
+                            let breakdown = null;
+
+                            if (date) {
+                                // If date is in formatted form (DD/MM), try matching by formatted value first
+                                if (typeof date === 'string' && date.indexOf('/') >= 0) {
+                                    for (const [d, b] of breakdownArr) {
+                                        if (formatDate(d) === date) { breakdown = b; date = d; break; }
+                                    }
+                                }
+                                // If not found yet, match by exact date string (YYYY-MM-DD)
+                                if (!breakdown) {
+                                    for (const [d, b] of breakdownArr) {
+                                        if (d === date) { breakdown = b; break; }
+                                    }
+                                }
+                            }
+
+                            if (breakdown) {
+                                showBreakdownModal(date, breakdown);
+                            } else {
+                                console.debug('No breakdown found for clicked bar, attempting fallback', { idx, date, breakdownArr });
+                                // Build a minimal fallback breakdown from available arrays (daily_sales/daily_costs/daily_profits/daily_orders)
+                                try {
+                                    const dsMap = (analyticsData.daily_sales || []).reduce((m, [d, v]) => (m[d] = v, m), {});
+                                    const dcMap = (analyticsData.daily_costs || []).reduce((m, [d, v]) => (m[d] = v, m), {});
+                                    const dpMap = (analyticsData.daily_profits || []).reduce((m, [d, v]) => (m[d] = v, m), {});
+                                    const doMap = (analyticsData.daily_orders || []).reduce((m, [d, v]) => (m[d] = v, m), {});
+                                    const prodCountsMap = {};
+                                    try { (analyticsData.daily_breakdowns || []).forEach(([d,b])=> { prodCountsMap[d] = (b.products||[]); }); } catch(e){}
+
+                                    const fb = {
+                                        product_cogs: dcMap[date] ? Math.max(0, dcMap[date] - (Number(localStorage.getItem('analytics.monthlyRent')||0)/30) - (Number(localStorage.getItem('analytics.hourlyWage')||0) * Number(localStorage.getItem('analytics.dailyHours')||0)) - ( (doMap[date]||0) * Number(localStorage.getItem('analytics.courierCost')||0) )) : 0,
+                                        revenue: dsMap[date] || 0,
+                                        rent: Math.round((Number(localStorage.getItem('analytics.monthlyRent')||0) / 30) || 0),
+                                        labor: Math.round((Number(localStorage.getItem('analytics.hourlyWage')||0) * Number(localStorage.getItem('analytics.dailyHours')||0)) || 0),
+                                        courier: Math.round((doMap[date]||0) * Number(localStorage.getItem('analytics.courierCost')||0)),
+                                        total_cost: dcMap[date] || 0,
+                                        profit: dpMap[date] || ( (dsMap[date]||0) - (dcMap[date]||0) ),
+                                        orders: doMap[date] || 0,
+                                        products: prodCountsMap[date] || [],
+                                        couriers: []
+                                    };
+                                    showBreakdownModal(date, fb);
+                                } catch (e) {
+                                    console.error('Fallback breakdown construction failed', e);
+                                }
+                            }
+                        } catch (err) {
+                            console.error('dailyCostsProfitsChart onClick error', err);
                         }
-                        if (breakdown) showBreakdownModal(date, breakdown);
                     },
                     responsive: true,
                     maintainAspectRatio: false,
@@ -1157,7 +1218,7 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: value => `$${value.toLocaleString()}`
+                                callback: value => `$${Number(value).toLocaleString(undefined,{maximumFractionDigits:0})}`
                             }
                         }
                     }
@@ -1187,13 +1248,13 @@
                     <div style="display:grid;grid-template-columns:1.4fr 1.8fr 0.8fr;gap:1rem;padding:0.5rem;color:var(--fg);align-items:start;">
                         <div style="padding-right:0.75rem;">
                             <div><strong>Orders:</strong> ${breakdown.orders}</div>
-                            <div><strong>Total Revenue:</strong> $${Number(breakdown.revenue || 0).toLocaleString()}</div>
-                            <div><strong>Product COGS:</strong> $${Number(breakdown.product_cogs).toLocaleString()}</div>
-                            <div><strong>Rent (per day):</strong> $${Number(breakdown.rent).toLocaleString()}</div>
-                            <div><strong>Labor (per day):</strong> $${Number(breakdown.labor).toLocaleString()}</div>
-                            <div><strong>Courier (total):</strong> $${Number(breakdown.courier).toLocaleString()}</div>
-                            <div style="margin-top:0.5rem;"><strong>Total Costs:</strong> $${Number(breakdown.total_cost).toLocaleString()}</div>
-                            <div style="margin-top:0.5rem;color:${breakdown.profit<0?'#f44336':'#4caf50'};"><strong>Net Profit:</strong> $${Number(breakdown.profit).toLocaleString()}</div>
+                            <div><strong>Total Revenue:</strong> $${Number(breakdown.revenue || 0).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                            <div><strong>Product COGS:</strong> $${Number(breakdown.product_cogs).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                            <div><strong>Rent (per day):</strong> $${Number(breakdown.rent).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                            <div><strong>Labor (per day):</strong> $${Number(breakdown.labor).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                            <div><strong>Courier (total):</strong> $${Number(breakdown.courier).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                            <div style="margin-top:0.5rem;"><strong>Total Costs:</strong> $${Number(breakdown.total_cost).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                            <div style="margin-top:0.5rem;color:${breakdown.profit<0?'#f44336':'#4caf50'};"><strong>Net Profit:</strong> $${Number(breakdown.profit).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
                         </div>
                         <div style="padding:0 1rem;border-left:1px solid var(--border);border-right:1px solid transparent;">
                             <h4 style="margin:0 0 0.5rem 0;color:var(--fg);text-align:center;">Products Sold</h4>
