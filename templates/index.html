@@ -838,10 +838,34 @@
         // Attach click handlers to menu items (fix double-click issues from inline handlers)
         function bindMenuItems(){
             const panel = document.querySelector('.menu-panel');
-            if(!panel) return;
-            // remove previous handler if any
-            if(panel._menuHandler) panel.removeEventListener('click', panel._menuHandler);
-            panel._menuHandler = function(e){
+            if(!panel){
+                // try again shortly if menu not yet rendered
+                setTimeout(bindMenuItems, 50);
+                return;
+            }
+            // remove previous handlers if any
+            try{ if(panel._menuHandlerClick) panel.removeEventListener('click', panel._menuHandlerClick); }catch(e){}
+            try{ if(panel._menuHandlerPointer) panel.removeEventListener('pointerdown', panel._menuHandlerPointer); }catch(e){}
+
+            // track recent pointer handling to avoid duplicate click handling
+            panel._lastHandledAt = 0;
+
+            panel._menuHandlerPointer = function(e){
+                const el = e.target.closest('.menu-item');
+                if(!el) return;
+                panel._lastHandledAt = Date.now();
+                const item = el.getAttribute('data-item');
+                const price = parseInt(el.getAttribute('data-price')) || 0;
+                if(el.getAttribute('data-has-mod')){
+                    openCustomization(item);
+                } else {
+                    addToOrder(item, price);
+                }
+            };
+
+            panel._menuHandlerClick = function(e){
+                // ignore click if pointerdown already handled very recently
+                if(Date.now() - (panel._lastHandledAt || 0) < 300) return;
                 const el = e.target.closest('.menu-item');
                 if(!el) return;
                 const item = el.getAttribute('data-item');
@@ -852,11 +876,17 @@
                     addToOrder(item, price);
                 }
             };
-            panel.addEventListener('click', panel._menuHandler);
+
+            panel.addEventListener('pointerdown', panel._menuHandlerPointer, {passive: true});
+            panel.addEventListener('click', panel._menuHandlerClick);
         }
 
-        // bind immediately (no delay) so first click is handled
-        bindMenuItems();
+        // ensure binder runs after DOM is ready so first interaction is handled
+        if(document.readyState === 'loading'){
+            document.addEventListener('DOMContentLoaded', bindMenuItems);
+        } else {
+            bindMenuItems();
+        }
 
         function removeFromOrder(item) {
             if (selectedItems[item]) {
