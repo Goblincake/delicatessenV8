@@ -321,6 +321,8 @@ def get_analytics():
     daily_costs = {}
     daily_profits = {}
     daily_product_cogs = {}
+    daily_product_counts = {}
+    daily_courier_counts = {}
     popular_items = {}
     hourly_orders = {}
     item_costs = {}
@@ -399,6 +401,11 @@ def get_analytics():
             popular_items.setdefault(item, 0)
             popular_items[item] += qty
 
+            # Track per-day product counts
+            daily_product_counts.setdefault(date, {})
+            daily_product_counts[date].setdefault(item, 0)
+            daily_product_counts[date][item] += qty
+
             # Track item costs and profits
             item_costs.setdefault(item, 0)
             item_costs[item] += item_cost * qty
@@ -428,6 +435,13 @@ def get_analytics():
         hourly_orders.setdefault(hour, 0)
         hourly_orders[hour] += 1
 
+        # Track courier/driver counts per day
+        driver = order.get('driver')
+        if driver:
+            daily_courier_counts.setdefault(date, {})
+            daily_courier_counts[date].setdefault(driver, 0)
+            daily_courier_counts[date][driver] += 1
+
     # After processing orders, add fixed daily costs (rent, labor) to each day
     rent_per_day = monthly_rent / 30.0
     labor_per_day = hourly_wage * daily_hours
@@ -450,6 +464,11 @@ def get_analytics():
             'profit': daily_profits.get(d, 0),
             'orders': daily_orders.get(d, 0)
         }
+        # attach product list (array of [product, qty]) and courier list ([driver, count])
+        prod_counts = daily_product_counts.get(d, {})
+        courier_counts = daily_courier_counts.get(d, {})
+        bd['products'] = sorted(list(prod_counts.items()), key=lambda x: x[1], reverse=True)
+        bd['couriers'] = sorted(list(courier_counts.items()), key=lambda x: x[1], reverse=True)
         daily_breakdowns.append([d, bd])
     
     sorted_daily = sorted(daily_sales.items())

@@ -854,6 +854,29 @@
                 const courierTotal = Math.round(dailyOrders * cfgCourier);
                 let productCogs = Math.round(dailyCosts - (rentPerDay + laborPerDay + courierTotal));
                 if (productCogs < 0) productCogs = Math.max(0, Math.round(dailyCosts * 0.6));
+                // generate per-day products sold breakdown (random distribution) and courier counts
+                const productsSold = {};
+                let rem = dailyOrders;
+                const dayMenu = menuItems || [
+                    "Pollo con Papas", "Milanesa con Ensalada", "Hamburguesa Completa",
+                    "Pizza Individual", "Empanadas (6)", "Asado para 2", "Sushi Rolls",
+                    "Pasta Alfredo", "Ensalada César", "Tacos Mexicanos"
+                ];
+                while (rem > 0) {
+                    const pick = dayMenu[Math.floor(Math.random() * dayMenu.length)];
+                    productsSold[pick] = (productsSold[pick] || 0) + 1;
+                    rem--;
+                }
+                // couriers distribution (3 drivers)
+                const courierDrivers = ['Driver A','Driver B','Driver C'];
+                const courierCounts = {};
+                let rem2 = dailyOrders;
+                while (rem2 > 0) {
+                    const pick = courierDrivers[Math.floor(Math.random() * courierDrivers.length)];
+                    courierCounts[pick] = (courierCounts[pick] || 0) + 1;
+                    rem2--;
+                }
+
                 dummyData.daily_breakdowns.push([dateStr, {
                     revenue: Math.round(dailyRevenue),
                     product_cogs: productCogs,
@@ -862,7 +885,9 @@
                     courier: courierTotal,
                     total_cost: Math.round(dailyCosts),
                     profit: Math.round(dailyProfits),
-                    orders: dailyOrders
+                    orders: dailyOrders,
+                    products: Object.entries(productsSold).sort((a,b)=>b[1]-a[1]),
+                    couriers: Object.entries(courierCounts).sort((a,b)=>b[1]-a[1])
                 }]);
             }
 
@@ -1139,16 +1164,29 @@
                 const titleEl = document.getElementById('modalChartTitle');
                 const holder = document.getElementById('modalCanvasHolder');
                 titleEl.textContent = 'Breakdown for ' + formatDate(date);
+                // layout: left = summary, middle = products, right = couriers
+                const productsHtml = (breakdown.products || []).map(([name,qty]) => `<li style="padding:0.15rem 0;">${escapeHtml(name)} <strong style="float:right;">${qty}</strong></li>`).join('') || '<li style="color:var(--fg-muted)">No products</li>';
+                const couriersHtml = (breakdown.couriers || []).map(([name,qty]) => `<li style="padding:0.15rem 0;">${escapeHtml(name)} <strong style="float:right;">${qty}</strong></li>`).join('') || '<li style="color:var(--fg-muted)">No couriers</li>';
                 holder.innerHTML = `
-                    <div style="padding:0.5rem;color:var(--fg);">
-                        <div><strong>Orders:</strong> ${breakdown.orders}</div>
-                        <div><strong>Total Revenue:</strong> $${Number(breakdown.revenue || 0).toLocaleString()}</div>
-                        <div><strong>Product COGS:</strong> $${Number(breakdown.product_cogs).toLocaleString()}</div>
-                        <div><strong>Rent (per day):</strong> $${Number(breakdown.rent).toLocaleString()}</div>
-                        <div><strong>Labor (per day):</strong> $${Number(breakdown.labor).toLocaleString()}</div>
-                        <div><strong>Courier (total):</strong> $${Number(breakdown.courier).toLocaleString()}</div>
-                        <div style="margin-top:0.5rem;"><strong>Total Costs:</strong> $${Number(breakdown.total_cost).toLocaleString()}</div>
-                        <div style="margin-top:0.5rem;color:${breakdown.profit<0?'#f44336':'#4caf50'};"><strong>Net Profit:</strong> $${Number(breakdown.profit).toLocaleString()}</div>
+                    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:1rem;padding:0.5rem;color:var(--fg);align-items:start;">
+                        <div>
+                            <div><strong>Orders:</strong> ${breakdown.orders}</div>
+                            <div><strong>Total Revenue:</strong> $${Number(breakdown.revenue || 0).toLocaleString()}</div>
+                            <div><strong>Product COGS:</strong> $${Number(breakdown.product_cogs).toLocaleString()}</div>
+                            <div><strong>Rent (per day):</strong> $${Number(breakdown.rent).toLocaleString()}</div>
+                            <div><strong>Labor (per day):</strong> $${Number(breakdown.labor).toLocaleString()}</div>
+                            <div><strong>Courier (total):</strong> $${Number(breakdown.courier).toLocaleString()}</div>
+                            <div style="margin-top:0.5rem;"><strong>Total Costs:</strong> $${Number(breakdown.total_cost).toLocaleString()}</div>
+                            <div style="margin-top:0.5rem;color:${breakdown.profit<0?'#f44336':'#4caf50'};"><strong>Net Profit:</strong> $${Number(breakdown.profit).toLocaleString()}</div>
+                        </div>
+                        <div>
+                            <h4 style="margin:0 0 0.5rem 0;color:var(--fg);">Products Sold</h4>
+                            <ul style="list-style:none;padding:0;margin:0;max-height:320px;overflow:auto;color:var(--fg);">${productsHtml}</ul>
+                        </div>
+                        <div>
+                            <h4 style="margin:0 0 0.5rem 0;color:var(--fg);">Couriers</h4>
+                            <ul style="list-style:none;padding:0;margin:0;max-height:320px;overflow:auto;color:var(--fg);">${couriersHtml}</ul>
+                        </div>
                     </div>
                 `;
                 // ensure modalOpenChartId is cleared so closeChartModal won't attempt to restore a canvas
