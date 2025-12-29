@@ -914,19 +914,19 @@
             }
 
             // Popular items (top 10 items)
-            const menuItems = [
+            const popularMenuItems = [
                 "Pollo con Papas", "Milanesa con Ensalada", "Hamburguesa Completa", 
                 "Pizza Individual", "Empanadas (6)", "Asado para 2", "Sushi Rolls",
                 "Pasta Alfredo", "Ensalada César", "Tacos Mexicanos"
             ];
             
-            menuItems.forEach((item, index) => {
+            popularMenuItems.forEach((item, index) => {
                 const orders = 312 - (index * 25) + Math.floor(Math.random() * 20); // Decreasing popularity
                 dummyData.popular_items.push([item, orders]);
             });
 
             // Item costs and margins
-            menuItems.forEach((item, index) => {
+            popularMenuItems.forEach((item, index) => {
                 const itemPrice = 45 + (index * 5) + Math.random() * 20; // $45-140
                 const itemCost = itemPrice * (0.4 + Math.random() * 0.3); // 40-70% cost
                 const totalCost = itemCost * dummyData.popular_items[index][1];
