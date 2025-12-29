@@ -701,6 +701,8 @@
 
     <!-- Toast -->
     <div class="toast" id="toast"></div>
+    <!-- Pre-create customization modal holder so it's available immediately on first click -->
+    <div id="customModal" class="modal-overlay" style="display:none"></div>
 
     <script>
         // Order state
@@ -711,15 +713,183 @@
             function escapeHtml(text) { if (text == null) return ''; const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
         }
 
-        function addToOrder(item, price) {
-            if (selectedItems[item]) {
-                selectedItems[item].quantity += 1;
-            } else {
+        // Add simple (non-customized) item to current order
+        function addToOrder(item, price){
+            if(!selectedItems[item]){
                 selectedItems[item] = { price: price, quantity: 1 };
+            } else {
+                selectedItems[item].quantity += 1;
             }
             updateOrderDisplay();
-            showToast(`${item} agregado`);
         }
+
+        // Add a customized item (with options/original name) to the order
+        function addCustomizedToOrder(displayName, originalName, perUnitPrice, qty, opts){
+            qty = parseInt(qty) || 1;
+            if(!selectedItems[displayName]){
+                selectedItems[displayName] = { price: perUnitPrice, quantity: qty, options: opts || {}, original_name: originalName };
+            } else {
+                selectedItems[displayName].quantity += qty;
+            }
+            updateOrderDisplay();
+        }
+
+        async function openCustomization(itemName){
+            // create modal holder immediately with loading state to ensure first-click feels responsive
+            let holder = document.getElementById('customModal');
+            if(!holder){
+                holder = document.createElement('div');
+                holder.id = 'customModal';
+                holder.className = 'modal-overlay';
+                holder.innerHTML = `<div class="modal"><div style="padding:20px;text-align:center">Cargando...</div></div>`;
+                document.body.appendChild(holder);
+                holder.addEventListener('click', (ev)=>{ if(ev.target === holder) { try{ holder.style.display='none' }catch(e){} } });
+            } else {
+                holder.innerHTML = `<div class="modal"><div style="padding:20px;text-align:center">Cargando...</div></div>`;
+                holder.style.display = 'block';
+            }
+
+            try{
+                const r = await fetch('/api/menu');
+                if(!r.ok) { showToast('Error cargando menú', 'error'); return; }
+                const menu = await r.json();
+                let itemData = null;
+                for(const cat of Object.keys(menu)){
+                    const items = menu[cat];
+                    if(items[itemName]){ itemData = items[itemName]; break }
+                }
+                if(!itemData){ showToast('Item no encontrado', 'error'); holder.style.display='none'; return }
+
+                const mods = itemData.modifiers || [];
+                let modalHtml = `<div style="padding:12px;max-width:420px">`;
+                modalHtml += `<h3 style="margin:0 0 8px">Personalizar ${escapeHtml(itemName)}</h3>`;
+                modalHtml += `<div id="modOptions">`;
+                mods.forEach(m => {
+                    if(m.type === 'toggle'){
+                        modalHtml += `<label style="display:flex;justify-content:space-between;padding:6px 0"><span>${escapeHtml(m.label)}</span><input type=checkbox data-mod="${m.id}" ${m.default? 'checked':''}></label>`;
+                    }
+                });
+                modalHtml += `</div>`;
+                modalHtml += `<div style="margin-top:8px;display:flex;gap:8px;align-items:center"><label>Cantidad: <input id="modQty" type=number value=1 min=1 style="width:64px;margin-left:6px"></label><div id="modPrice" style="margin-left:auto;font-weight:700">$${itemData.price}</div></div>`;
+                modalHtml += `<div style="margin-top:12px;text-align:right"><button id="cancelModBtn" class="btn-secondary" style="margin-right:8px">Cancelar</button><button class="btn-primary" id="confirmModBtn">Agregar</button></div>`;
+                modalHtml += `</div>`;
+
+                holder.innerHTML = `<div class="modal">${modalHtml}</div>`;
+
+                const updatePreview = async ()=>{
+                    const opts = {};
+                    holder.querySelectorAll('[data-mod]').forEach(ch=>{ opts[ch.getAttribute('data-mod')] = !!ch.checked });
+                    const qty = parseInt(document.getElementById('modQty').value)||1;
+                    try{
+                        const q = await fetch('/api/quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item: itemName, details:{quantity: qty, options: opts}})});
+                        if(q.ok){ const jr = await q.json(); document.getElementById('modPrice').textContent = '$'+jr.price }
+                    }catch(e){/*ignore*/}
+                };
+
+                holder.querySelectorAll('[data-mod]').forEach(ch=>ch.addEventListener('change', updatePreview));
+                holder.querySelector('#modQty').addEventListener('input', updatePreview);
+
+                updatePreview();
+
+                holder.querySelector('#confirmModBtn').addEventListener('click', async ()=>{
+                    const opts = {};
+                    holder.querySelectorAll('[data-mod]').forEach(ch=>{ opts[ch.getAttribute('data-mod')] = !!ch.checked });
+                    const qty = parseInt(document.getElementById('modQty').value)||1;
+                    const q = await fetch('/api/quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item: itemName, details:{quantity: qty, options: opts}})});
+                    let price = itemData.price;
+                    if(q.ok){ const jr = await q.json(); price = jr.price }
+                    const summary = Object.keys(opts).filter(k=>opts[k]).join(', ');
+                    const displayName = summary ? `${itemName} (${summary})` : itemName;
+                    addCustomizedToOrder(displayName, itemName, Math.round(price/qty), qty, opts);
+                    // cleanup
+                    try{ holder.style.display='none' }catch(e){}
+                });
+
+                const cancelBtn = holder.querySelector('#cancelModBtn');
+                if(cancelBtn) cancelBtn.addEventListener('click', ()=> { try{ holder.style.display='none'}catch(e){} });
+
+                // focus trap and escape handling
+                const keyHandler = (e)=>{
+                    if(e.key === 'Escape'){
+                        e.preventDefault(); try{ holder.style.display='none' }catch(e){}; return;
+                    }
+                    if(e.key === 'Tab'){
+                        const focusable = Array.from(holder.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled && el.offsetParent !== null);
+                        if(focusable.length === 0) return;
+                        const first = focusable[0];
+                        const last = focusable[focusable.length-1];
+                        if(e.shiftKey){ if(document.activeElement === first){ e.preventDefault(); last.focus(); } }
+                        else { if(document.activeElement === last){ e.preventDefault(); first.focus(); } }
+                    }
+                };
+
+                document.addEventListener('keydown', keyHandler);
+                setTimeout(()=>{
+                    const focusable = Array.from(holder.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled && el.offsetParent !== null);
+                    if(focusable.length) focusable[0].focus();
+                }, 10);
+
+            }catch(e){ console.error(e); showToast('Error al abrir personalización'); try{ holder.style.display='none' }catch(ex){} }
+        }
+
+        // Attach click handlers to menu items (fix double-click issues from inline handlers)
+        function bindMenuItems(){
+            const panel = document.querySelector('.menu-panel');
+            if(!panel){
+                // try again shortly if menu not yet rendered
+                setTimeout(bindMenuItems, 50);
+                return;
+            }
+            // remove previous handlers if any
+            try{ if(panel._menuHandlerClick) panel.removeEventListener('click', panel._menuHandlerClick); }catch(e){}
+            try{ if(panel._menuHandlerPointer) panel.removeEventListener('pointerdown', panel._menuHandlerPointer); }catch(e){}
+
+            // track recent pointer handling to avoid duplicate click handling
+            panel._lastHandledAt = 0;
+
+            panel._menuHandlerPointer = function(e){
+                const el = e.target.closest('.menu-item');
+                if(!el) return;
+                panel._lastHandledAt = Date.now();
+                const item = el.getAttribute('data-item');
+                const price = parseInt(el.getAttribute('data-price')) || 0;
+                if(el.getAttribute('data-has-mod')){
+                    openCustomization(item);
+                } else {
+                    addToOrder(item, price);
+                }
+            };
+
+            panel._menuHandlerClick = function(e){
+                // ignore click if pointerdown already handled very recently
+                if(Date.now() - (panel._lastHandledAt || 0) < 300) return;
+                const el = e.target.closest('.menu-item');
+                if(!el) return;
+                const item = el.getAttribute('data-item');
+                const price = parseInt(el.getAttribute('data-price')) || 0;
+                if(el.getAttribute('data-has-mod')){
+                    openCustomization(item);
+                } else {
+                    addToOrder(item, price);
+                }
+            };
+
+            panel.addEventListener('pointerdown', panel._menuHandlerPointer, {passive: true});
+            panel.addEventListener('click', panel._menuHandlerClick);
+        }
+
+        // ensure binder runs after DOM is ready so first interaction is handled
+        if(document.readyState === 'loading'){
+            document.addEventListener('DOMContentLoaded', bindMenuItems);
+        } else {
+            bindMenuItems();
+        }
+
+        // handle navigation back/forward cache restores where DOMContentLoaded may not fire
+        window.addEventListener('pageshow', function(e){
+            // rebind handlers when page is shown from bfcache or navigation
+            bindMenuItems();
+        });
 
         function removeFromOrder(item) {
             if (selectedItems[item]) {
