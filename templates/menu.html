@@ -1,9 +1,19 @@
             <!-- Menu Panel -->
             <div class="menu-panel">
+                {# simple emoji map for category icons - extend as needed #}
+                {% set _cat_icons = {
+                    'Hamburguesas':'🍔',
+                    'Pizzas':'🍕',
+                    'Milanesas':'🍗',
+                    'Bebidas':'🥤',
+                    'Refrescos':'🥤',
+                    'Postres':'🍰',
+                    'Bauru':'🥪'
+                } %}
                 {% for category, items in menu.items() %}
                 <div class="category">
                     <div class="category-header" onclick="toggleCategory(this)">
-                        <span>{{ category }}</span>
+                        <span class="category-label">{{ _cat_icons.get(category, '🍽️') }}&nbsp;{{ category }}</span>
                         <span class="toggle-icon">▼</span>
                     </div>
                     <div class="category-items">
