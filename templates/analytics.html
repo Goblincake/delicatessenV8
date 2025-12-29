@@ -826,6 +826,13 @@
                 item_margins: []
             };
 
+            // Menu items used for dummy generation
+            const menuItems = [
+                "Pollo con Papas", "Milanesa con Ensalada", "Hamburguesa Completa",
+                "Pizza Individual", "Empanadas (6)", "Asado para 2", "Sushi Rolls",
+                "Pasta Alfredo", "Ensalada César", "Tacos Mexicanos"
+            ];
+
             // Generate data for the last 30 days
             for (let i = 29; i >= 0; i--) {
                 const date = new Date(today);
