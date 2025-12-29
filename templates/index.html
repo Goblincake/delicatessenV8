@@ -807,41 +807,6 @@
                 }, 10);
 
             }catch(e){ console.error(e); showToast('Error al abrir personalización'); try{ holder.style.display='none' }catch(ex){} }
-                });
-
-                    const cancelBtn = holder.querySelector('#cancelModBtn');
-                    if(cancelBtn) cancelBtn.addEventListener('click', ()=> closeCustom());
-
-                // focus trap and escape handling
-                const keyHandler = (e)=>{
-                    if(e.key === 'Escape'){
-                        e.preventDefault();
-                        closeCustom();
-                        return;
-                    }
-                    if(e.key === 'Tab'){
-                        const focusable = Array.from(holder.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled && el.offsetParent !== null);
-                        if(focusable.length === 0) return;
-                        const first = focusable[0];
-                        const last = focusable[focusable.length-1];
-                        if(e.shiftKey){ if(document.activeElement === first){ e.preventDefault(); last.focus(); } }
-                        else { if(document.activeElement === last){ e.preventDefault(); first.focus(); } }
-                    }
-                };
-
-                function closeCustom(){
-                    try{ holder.style.display = 'none'; }catch(e){}
-                    document.removeEventListener('keydown', keyHandler);
-                }
-
-                // attach key handler and set initial focus
-                document.addEventListener('keydown', keyHandler);
-                setTimeout(()=>{
-                    const focusable = Array.from(holder.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled && el.offsetParent !== null);
-                    if(focusable.length) focusable[0].focus();
-                }, 10);
-
-            }catch(e){ console.error(e); showToast('Error al abrir personalización') }
         }
 
         // Attach click handlers to menu items (fix double-click issues from inline handlers)
