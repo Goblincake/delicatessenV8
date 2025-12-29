@@ -103,26 +103,49 @@
         renderOrders();
 
         // Language toggle
-        const translations = {
-            es: {
-                menu: "🛒 Menú",
-                pedidos: "📋 Pedidos",
-                analytics: "📊 Análisis",
-                drivers: "🛵 Repartidores",
-                deliveries: "🚚 Entregas",
-                langBtn: "🌐 EN",
-                title: "Entregas - Asignar Repartidores"
-            },
-            en: {
-                menu: "🛒 Menu",
-                pedidos: "📋 Orders",
-                analytics: "📊 Analytics",
-                drivers: "🛵 Drivers",
-                deliveries: "🚚 Deliveries",
-                langBtn: "🌐 ES",
-                title: "Deliveries - Assign Drivers"
-            }
-        };
+        if (typeof translations === 'undefined') {
+            var translations = {
+                es: {
+                    menu: "🛒 Menú",
+                    pedidos: "📋 Pedidos",
+                    analytics: "📊 Análisis",
+                    drivers: "🛵 Repartidores",
+                    deliveries: "🚚 Entregas",
+                    langBtn: "🌐 EN",
+                    title: "Entregas - Asignar Repartidores"
+                },
+                en: {
+                    menu: "🛒 Menu",
+                    pedidos: "📋 Orders",
+                    analytics: "📊 Analytics",
+                    drivers: "🛵 Drivers",
+                    deliveries: "🚚 Deliveries",
+                    langBtn: "🌐 ES",
+                    title: "Deliveries - Assign Drivers"
+                }
+            };
+        } else {
+            Object.assign(translations, {
+                es: {
+                    menu: "🛒 Menú",
+                    pedidos: "📋 Pedidos",
+                    analytics: "📊 Análisis",
+                    drivers: "🛵 Repartidores",
+                    deliveries: "🚚 Entregas",
+                    langBtn: "🌐 EN",
+                    title: "Entregas - Asignar Repartidores"
+                },
+                en: {
+                    menu: "🛒 Menu",
+                    pedidos: "📋 Orders",
+                    analytics: "📊 Analytics",
+                    drivers: "🛵 Drivers",
+                    deliveries: "🚚 Deliveries",
+                    langBtn: "🌐 ES",
+                    title: "Deliveries - Assign Drivers"
+                }
+            });
+        }
 
         let currentLang = localStorage.getItem('lang') || 'es';
 
