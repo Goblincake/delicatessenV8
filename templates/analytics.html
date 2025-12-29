@@ -1174,6 +1174,15 @@
                 // layout: left = summary, middle = products, right = couriers
                 const productsHtml = (breakdown.products || []).map(([name,qty]) => `<li style="padding:0.15rem 0;display:flex;justify-content:space-between;align-items:center;">${escapeHtml(name)}<span style=\"margin-left:1rem;font-weight:600;color:var(--fg)\">${qty}</span></li>`).join('') || '<li style="color:var(--fg-muted)">No products</li>';
                 const couriersHtml = (breakdown.couriers || []).map(([name,qty]) => `<li style="padding:0.15rem 0;display:flex;justify-content:space-between;align-items:center;">${escapeHtml(name)}<span style=\"margin-left:1rem;font-weight:600;color:var(--fg)\">${qty}</span></li>`).join('') || '<li style="color:var(--fg-muted)">No couriers</li>';
+                // remove any existing modal clone charts to avoid leftover canvases
+                Object.keys(chartInstances).forEach(k => {
+                    if (k && k.toString().endsWith('_modal_clone')) {
+                        try { if (chartInstances[k] && typeof chartInstances[k].destroy === 'function') chartInstances[k].destroy(); } catch (e) { console.debug('destroying leftover clone failed', e); }
+                        try { const el = document.getElementById(k); if (el && el.parentNode) el.parentNode.removeChild(el); } catch (e) { }
+                        try { delete chartInstances[k]; } catch (e) { }
+                    }
+                });
+
                 holder.innerHTML = `
                     <div style="display:grid;grid-template-columns:1.4fr 1.8fr 0.8fr;gap:1rem;padding:0.5rem;color:var(--fg);align-items:start;">
                         <div style="padding-right:0.75rem;">
@@ -1270,6 +1279,18 @@
             const modal = document.getElementById('chartModal');
             const titleEl = document.getElementById('modalChartTitle');
             titleEl.textContent = title || '';
+            // clear any existing modal content (including previous clones)
+            try {
+                Object.keys(chartInstances).forEach(k => {
+                    if (k && k.toString().endsWith('_modal_clone')) {
+                        try { if (chartInstances[k] && typeof chartInstances[k].destroy === 'function') chartInstances[k].destroy(); } catch (e) { console.debug('destroying leftover clone failed', e); }
+                        try { const el = document.getElementById(k); if (el && el.parentNode) el.parentNode.removeChild(el); } catch (e) { }
+                        try { delete chartInstances[k]; } catch (e) { }
+                    }
+                });
+            } catch (e) {
+                console.debug('error clearing previous modal content', e);
+            }
 
             // create a cloned canvas for the modal so the original chart remains in-place
             const modalCanvas = document.createElement('canvas');
