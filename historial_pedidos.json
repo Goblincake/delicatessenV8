@@ -215,10 +215,10 @@
     },
     "notes": "",
     "total": 2500.0,
-    "status": "finished",
-    "finished_at": "2025-12-29 03:50:46",
+    "status": "completed",
+    "finished_at": "2025-12-29 15:18:44",
     "assigned_at": "2025-12-29 03:57:24",
-    "assigned_ttl": 40,
+    "assigned_ttl": 50,
     "driver": "Goblincake"
   },
   {
@@ -236,10 +236,37 @@
     },
     "notes": "",
     "total": 3200.0,
-    "status": "finished",
-    "finished_at": "2025-12-29 03:57:42",
+    "status": "completed",
+    "finished_at": "2025-12-29 15:18:45",
     "driver": "Bob",
     "assigned_at": "2025-12-29 03:57:52",
+    "assigned_ttl": 40
+  },
+  {
+    "id": 12,
+    "code": "P012",
+    "timestamp": "2025-12-29 15:41:59",
+    "customer": "Cliente Ocasional",
+    "items": {
+      "Hamburguesa Simple": {
+        "quantity": 1,
+        "per_unit": 1800.0,
+        "line_total": 1800.0,
+        "options": null
+      },
+      "Hamburguesa Especial": {
+        "quantity": 1,
+        "per_unit": 3000.0,
+        "line_total": 3000.0,
+        "options": null
+      }
+    },
+    "notes": "",
+    "total": 4800.0,
+    "status": "completed",
+    "finished_at": "2025-12-29 15:44:07",
+    "driver": "Goblincake",
+    "assigned_at": "2025-12-29 15:42:54",
     "assigned_ttl": 30
   }
 ]
