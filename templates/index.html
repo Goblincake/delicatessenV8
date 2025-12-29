@@ -837,25 +837,26 @@
 
         // Attach click handlers to menu items (fix double-click issues from inline handlers)
         function bindMenuItems(){
-            document.querySelectorAll('.menu-item').forEach(el=>{
-                // remove any existing handler to avoid duplicates
-                el.replaceWith(el.cloneNode(true));
-            });
-            document.querySelectorAll('.menu-item').forEach(el=>{
-                el.addEventListener('click', (e)=>{
-                    const item = el.getAttribute('data-item');
-                    const price = parseInt(el.getAttribute('data-price')) || 0;
-                    if(el.getAttribute('data-has-mod')){
-                        openCustomization(item);
-                    } else {
-                        addToOrder(item, price);
-                    }
-                });
-            });
+            const panel = document.querySelector('.menu-panel');
+            if(!panel) return;
+            // remove previous handler if any
+            if(panel._menuHandler) panel.removeEventListener('click', panel._menuHandler);
+            panel._menuHandler = function(e){
+                const el = e.target.closest('.menu-item');
+                if(!el) return;
+                const item = el.getAttribute('data-item');
+                const price = parseInt(el.getAttribute('data-price')) || 0;
+                if(el.getAttribute('data-has-mod')){
+                    openCustomization(item);
+                } else {
+                    addToOrder(item, price);
+                }
+            };
+            panel.addEventListener('click', panel._menuHandler);
         }
 
-        // bind after initial render
-        setTimeout(bindMenuItems, 50);
+        // bind immediately (no delay) so first click is handled
+        bindMenuItems();
 
         function removeFromOrder(item) {
             if (selectedItems[item]) {
