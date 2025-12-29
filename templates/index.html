@@ -6,7 +6,6 @@
     <title>Sistema de Pedidos - Rotisería</title>
     {% include '_header_css.html' %}
     <style>
-        :root { --main-scale: 1; }
         :root {
             --bg: #1e1e1e;
             --bg-secondary: #2d2d2d;
@@ -37,10 +36,7 @@
         .container {
             display: flex;
             flex-direction: column;
-                height: 100vh;
-                transform: scale(var(--main-scale));
-                transform-origin: top left;
-                width: calc(100% / var(--main-scale));
+            height: 100vh;
         }
 
         header {
@@ -72,24 +68,8 @@
         .menu-panel {
             flex: 2;
             padding: 1rem;
-            overflow: hidden;
+            overflow-y: auto;
         }
-
-        /* Compact mode overrides */
-        body.compact header { padding: 0.5rem 1rem; }
-        body.compact header h1 { font-size: 1rem; }
-        body.compact .menu-panel { padding: 0.5rem; }
-        body.compact .menu-item { padding: 0.5rem; }
-        body.compact .menu-item .item-name { font-size: 0.88rem; }
-        body.compact .menu-item .item-price { font-size: 0.95rem; }
-        body.compact .category-items { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.45rem; }
-        body.compact .order-panel { display: none; }
-        /* When fit scale applied, ensure body doesn't show scrollbars */
-        html[style] .container { will-change: transform; }
-        body.compact .main-content { grid-template-columns: 1fr; }
-        body.compact .category-header { padding: 0.5rem 0.6rem; font-size: 0.95rem; }
-        body.compact .category-items { padding: 0.6rem; }
-        body.compact .menu-item { font-size: 0.92rem; }
 
         .category {
             background-color: var(--bg-secondary);
