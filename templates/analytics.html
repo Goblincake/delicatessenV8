@@ -1141,6 +1141,7 @@
                 holder.innerHTML = `
                     <div style="padding:0.5rem;color:var(--fg);">
                         <div><strong>Orders:</strong> ${breakdown.orders}</div>
+                        <div><strong>Total Revenue:</strong> $${Number(breakdown.revenue || 0).toLocaleString()}</div>
                         <div><strong>Product COGS:</strong> $${Number(breakdown.product_cogs).toLocaleString()}</div>
                         <div><strong>Rent (per day):</strong> $${Number(breakdown.rent).toLocaleString()}</div>
                         <div><strong>Labor (per day):</strong> $${Number(breakdown.labor).toLocaleString()}</div>

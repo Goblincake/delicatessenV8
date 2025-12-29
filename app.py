@@ -442,6 +442,7 @@ def get_analytics():
     for d, _ in sorted(daily_sales.items()):
         bd = {
             'product_cogs': daily_product_cogs.get(d, 0),
+            'revenue': daily_sales.get(d, 0),
             'rent': rent_per_day,
             'labor': labor_per_day,
             'courier': courier_cost_per_order * daily_orders.get(d, 0),
