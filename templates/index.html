@@ -48,16 +48,6 @@
             align-items: center;
         }
 
-        header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-        }
-
         .main-content {
             display: flex;
             flex: 1;
@@ -72,28 +62,27 @@
             flex: 2 1 0;
             padding: 0.6rem;
             overflow-y: auto;
-            min-width: 240px;
-        }
-
-        .order-panel {
-            flex: 1 0 360px;
-            min-width: 300px;
-            max-width: 480px;
-            /* keep panels aligned from the top with a small uniform gap from header */
             margin-top: 0.6rem;
             display: flex;
             flex-direction: column;
         }
-
-        .ready-orders-panel {
-            flex: 0 0 360px;
-            min-width: 260px;
-            max-width: 380px;
-            /* match top gap with center panel */
-            margin-top: 0.6rem;
-            display: flex;
-            flex-direction: column;
+        /* Blink animation for unassigned ready orders */
+        @keyframes ordersBlink {
+            0% { box-shadow: 0 0 0 0 rgba(255,200,0,0.0); }
+            50% { box-shadow: 0 0 18px 6px rgba(255,200,0,0.12); }
+            100% { box-shadow: 0 0 0 0 rgba(255,200,0,0.0); }
         }
+        .ready-orders-list .order-card.needs-assign {
+            border-color: rgba(255,200,0,0.6);
+        }
+        /* transient animation only for newly arrived unassigned orders */
+        .ready-orders-list .order-card.new-arrival {
+            animation: ordersBlink 1.4s ease-in-out 0s 3; /* play 3 times */
+        }
+        .ready-orders-list .order-card .unassigned-flag{display:block;margin-top:4px;padding:2px 4px;background:rgba(255,200,0,0.06);color:#ffd27a;border-radius:6px;font-size:0.7rem;text-align:right}
+
+        /* compact notes */
+        .ready-orders-list .order-notes { font-size:0.75rem; color:var(--fg-muted); max-height:1.2rem; overflow:hidden; text-overflow:ellipsis; }
 
         .category {
             background-color: var(--bg-secondary);
@@ -173,8 +162,9 @@
             display: block;
             flex: 1 1 auto;
             min-width: 0; /* allow flex children to shrink properly */
-            margin-right: 3.2rem; /* ensure reserved space for price remains */
-            max-width: calc(100% - 56px);
+            /* reserve space for the price; this is scaled by the tile scale to avoid empty gaps */
+            margin-right: var(--menu-price-space, 56px);
+            max-width: calc(100% - var(--menu-price-space, 56px));
         }
 
         .menu-item .item-price {
@@ -198,6 +188,7 @@
             border-left: 1px solid var(--border);
             display: flex;
             flex-direction: column;
+            margin-top: 0.6rem; /* align with menu-panel spacing */
         }
 
         /* Ready Orders Panel */
@@ -205,7 +196,7 @@
             width: 100%;
             background-color: var(--bg-secondary);
             border-top: 1px solid var(--border);
-            margin-top: 1rem;
+            margin-top: 0.6rem; /* align with menu and order panels */
         }
 
         .ready-orders-list {
@@ -215,32 +206,42 @@
         .ready-orders-list .order-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
-            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 0.35rem;
+            padding: 0.5rem;
             overflow: hidden;
+            font-size: 0.92rem;
         }
 
         .ready-orders-list .order-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.5rem;
-        }
+            margin-bottom: 0.25rem;
+            }
+            .ready-orders-list .order-card:hover .order-body {
+                max-height: 18rem; /* expand on hover to reveal items */
+            }
+            max-height: 3.2rem; /* keep body compact */
+            overflow: hidden;
+            transition: max-height .18s ease;
 
-        .ready-orders-list .order-code {
-            font-weight: 600;
-            color: var(--accent);
-        }
 
+        .ready-orders-list .order-card:hover .order-body {
+            max-height: 18rem; /* expand on hover to reveal items */
+        }
         .ready-orders-list .order-customer {
             color: var(--fg-muted);
-            font-size: 0.9rem;
+            font-size: 0.82rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .ready-orders-list .order-time {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--fg-muted);
+            text-align: right;
         }
 
         .ready-orders-list .order-status-badge {
@@ -280,19 +281,24 @@
         .ready-orders-list .order-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.25rem;
-            font-size: 0.9rem;
+            margin-bottom: 0.15rem;
+            font-size: 0.82rem;
+            gap: 0.35rem;
+            align-items: center;
         }
 
         .ready-orders-list .item-qty {
             color: var(--accent);
-            font-weight: 600;
+            font-weight: 700;
+            width: 30px;
+            font-size: 0.85rem;
         }
 
         .ready-orders-list .order-total {
-            font-weight: 600;
+            font-weight: 700;
             text-align: right;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
+            font-size: 0.95rem;
         }
 
         .ready-orders-list .order-actions {
@@ -536,13 +542,14 @@
 
         .order-item {
             display: flex;
-            justify-content: space-between;
+            background-color: var(--bg-card);
             align-items: center;
             padding: 0.75rem;
-            background-color: var(--bg-card);
             border-radius: 4px;
             margin-bottom: 0.5rem;
         }
+
+        /* Preview card layout removed to avoid CSS nesting issues */
 
         .order-item-info {
             flex: 1;
@@ -1305,6 +1312,8 @@
         let readyDriversCache = [];
         let readyDelegationAttached = false;
         let assignedDelegationAttached = false;
+        // track previously-seen unassigned order ids so we can flash new arrivals
+        let readyPrevUnassigned = new Set();
         // When the user is interacting with a select (opening dropdown), suspend the periodic refresh
         let suspendRefresh = false;
 
@@ -1365,18 +1374,22 @@
                     const time = order.timestamp.split(' ')[1];
                     const orderCode = order.code || `P${String(order.id).padStart(3, '0')}`;
                     return `
-                        <div class="order-card finished">
-                            <div class="order-header">
-                                <div style="display:flex; align-items:center; gap:0.5rem;">
-                                    <input type="checkbox" class="order-checkbox" data-orderid="${order.id}">
-                                    <div>
-                                        <div class="order-code">${orderCode}</div>
-                                        <div class="order-customer">${escapeHtml(order.customer)}</div>
+                            <div class="order-card finished needs-assign" data-orderid="${order.id}">
+                                <div class="order-header">
+                                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                                        <input type="checkbox" class="order-checkbox" data-orderid="${order.id}">
+                                        <div>
+                                            <div class="order-code">${orderCode}</div>
+                                            <div class="order-customer">${escapeHtml(order.customer)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="order-time">
+                                        ${time}<br>
+                                        <span class="order-status-badge finished">${translations[currentLang].ready}</span>
+                                        <span class="unassigned-flag">Sin repartidor</span>
                                     </div>
                                 </div>
-                                <div class="order-time">${time}<br><span class="order-status-badge finished">${translations[currentLang].ready}</span></div>
-                            </div>
-                            <div class="order-body">
+                                <div class="order-body">
                                 ${Object.entries(order.items).map(([item, d]) => `
                                     <div class="order-item">
                                         <span><span class="item-qty">${d.quantity}x</span> ${escapeHtml(item)}</span>
@@ -1388,6 +1401,25 @@
                         </div>
                     `;
                 }).join('');
+            }
+
+            // Transient flash for newly arrived unassigned orders
+            try {
+                const currentUnassignedIds = new Set((unassigned || []).map(o => o.id));
+                const newArrivals = Array.from(currentUnassignedIds).filter(id => !readyPrevUnassigned.has(id));
+                if (newArrivals.length > 0) {
+                    newArrivals.forEach(id => {
+                        const el = container.querySelector(`.order-card[data-orderid="${id}"]`);
+                        if (el) {
+                            el.classList.add('new-arrival');
+                            setTimeout(() => el.classList.remove('new-arrival'), 5000);
+                        }
+                    });
+                }
+                // update previous set for next diff
+                readyPrevUnassigned = currentUnassignedIds;
+            } catch (err) {
+                console.error('flash detection error', err);
             }
 
             // Add event listeners for bulk actions

@@ -50,6 +50,14 @@
             unassign: "Desasignar",
             unassigned: "(sin asignar)"
             ,
+            pageZoomLabel: "Zoom página",
+            waitingOrders: "Esperando pedidos...",
+            historyFinished: "Historial (Finalizados)",
+            noFinishedOrders: "No hay pedidos finalizados.",
+            orderLabel: "Pedido:",
+            timeLabel: "Tiempo:",
+            finishedLabel: "Finalizado:",
+            finalizeBtn: "Finalizar",
             
         },
         en: {
@@ -83,6 +91,14 @@
             unassign: "Unassign",
             unassigned: "(unassigned)"
             ,
+            pageZoomLabel: "Page zoom",
+            waitingOrders: "Waiting for orders...",
+            historyFinished: "History (Finished)",
+            noFinishedOrders: "No finished orders.",
+            orderLabel: "Order:",
+            timeLabel: "Time:",
+            finishedLabel: "Finished:",
+            finalizeBtn: "Finalize",
             
         }
     };
@@ -104,6 +120,9 @@
             if (!text) return;
             el.textContent = text;
         });
+
+        // set HTML lang attribute
+        try { document.documentElement.lang = currentLang; } catch (e) { /* ignore */ }
 
         // Update page-specific elements only if they exist
         const mapping = {
@@ -138,6 +157,10 @@
     function setTileScale(scale) {
         const px = Math.round(TILE_BASE_PX * Number(scale));
         document.documentElement.style.setProperty('--menu-tile-min', px + 'px');
+        // expose a scale factor and a reserved price-space so CSS can shrink reserved areas
+        document.documentElement.style.setProperty('--menu-tile-scale', String(Number(scale)));
+        const priceSpace = Math.round(56 * Number(scale));
+        document.documentElement.style.setProperty('--menu-price-space', priceSpace + 'px');
     }
 
     function initTileScale() {
