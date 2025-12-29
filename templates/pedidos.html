@@ -38,21 +38,16 @@
     {% include '_header.html' %}
 
     <main>
-        <div style="display:flex;align-items:center;gap:12px;margin:8px 16px">
-            <label style="color:var(--muted);font-size:0.95rem">Zoom página
-                <input id="pageZoom" type="range" min="0.6" max="1.8" step="0.02" value="1" style="width:240px;margin-left:8px">
-            </label>
-            <div id="pageZoomValue" style="color:var(--muted);font-size:0.95rem">100%</div>
-        </div>
+        <!-- page zoom removed per request -->
         <div class="orders-layout" style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 320px;gap:16px;padding:0 16px;transform-origin:0 0">
             <section>
-                <div id="ordersContainer" class="orders"></div>
-                <div id="empty" class="empty-state" style="display:none">Esperando pedidos...</div>
+                        <div id="ordersContainer" class="orders"></div>
+                        <div id="empty" class="empty-state" style="display:none" data-i18n="waitingOrders">Esperando pedidos...</div>
             </section>
             <aside style="">
-                <h3 style="margin:0 0 8px;color:var(--muted);font-weight:700">Historial (Finalizados)</h3>
+                        <h3 style="margin:0 0 8px;color:var(--muted);font-weight:700" data-i18n="historyFinished">Historial (Finalizados)</h3>
                 <div id="historyContainer" class="history-list" style="display:block;max-height:70vh;overflow:auto;padding-right:6px"></div>
-                <div id="historyEmpty" class="empty-state" style="display:none">No hay pedidos finalizados.</div>
+                        <div id="historyEmpty" class="empty-state" style="display:none" data-i18n="noFinishedOrders">No hay pedidos finalizados.</div>
             </aside>
         </div>
     </main>
@@ -98,7 +93,7 @@
                     }
                     return `<div class="order-item"><span class="order-item-name"><span class="item-qty">${qty}x</span> ${escapeHtml(name)}</span><span class="order-item-price">$${(price).toLocaleString()}</span></div>`
                 }).join('');
-                const actionBtn = status==='pending' ? `<button class="btn-primary" onclick="updateStatus(${orderId},'finished')">✔ Finalizar</button>` : '';
+                const actionBtn = status==='pending' ? `<button class="btn-primary" onclick="updateStatus(${orderId},'finished')">✔ ${translations[currentLang].finalizeBtn || translations[currentLang].complete}</button>` : '';
                 return `
                     <div class="order-card">
                         <div class="order-header">
@@ -108,15 +103,15 @@
                                 ${order.address? `<div class="order-address" style="color:var(--muted);font-size:0.9rem;margin-top:4px">📍 ${escapeHtml(order.address)}</div>` : ''}
                             </div>
                             <div style="text-align:right">
-                                <div class="order-time" title="Hora de pedido">Pedido: ${time}</div>
-                                <div class="order-wait" data-ts="${escapeHtml(order.timestamp||'')}" title="Tiempo transcurrido desde el pedido">Tiempo: ${formatElapsed(order.timestamp||'')}</div>
+                                <div class="order-time" title="${translations[currentLang].orderLabel || 'Pedido:'}">${translations[currentLang].orderLabel || 'Pedido:'} ${time}</div>
+                                <div class="order-wait" data-ts="${escapeHtml(order.timestamp||'')}" title="${translations[currentLang].timeLabel || 'Tiempo:'}">${translations[currentLang].timeLabel || 'Tiempo:'} ${formatElapsed(order.timestamp||'')}</div>
                             </div>
                         </div>
                         <div class="order-body">
                             ${itemsHtml}
                             ${order.notes?`<div class="order-notes">📝 ${escapeHtml(order.notes)}</div>`:''}
                             ${order.address? `<div class="order-address" style="color:var(--muted);font-size:0.95rem;margin-top:6px">📍 ${escapeHtml(order.address)}</div>` : ''}
-                            <div class="order-total">Total: $${(order.total||0).toLocaleString()}</div>
+                            <div class="order-total">${translations[currentLang].total || 'Total:'} $${(order.total||0).toLocaleString()}</div>
                             <div class="order-actions">${actionBtn}</div>
                         </div>
                     </div>`
@@ -152,14 +147,14 @@
                     <div class="order-card" style="padding:8px;margin-bottom:8px;">
                         <div style="display:flex;justify-content:space-between;align-items:center">
                             <div style="font-weight:700">${escapeHtml(orderCode)}</div>
-                            <div style="color:var(--muted);font-size:0.9rem">Pedido: ${escapeHtml(time)}</div>
+                            <div style="color:var(--muted);font-size:0.9rem">${translations[currentLang].orderLabel || 'Pedido:'} ${escapeHtml(time)}</div>
                         </div>
                         <div style="margin-top:6px;color:var(--muted);font-size:0.95rem">${escapeHtml(order.customer||'--')}</div>
                         ${order.address? `<div style="margin-top:6px;color:var(--muted);font-size:0.95rem">📍 ${escapeHtml(order.address)}</div>` : ''}
-                        <div style="margin-top:6px;color:var(--muted)">Total: $${total}</div>
+                        <div style="margin-top:6px;color:var(--muted)">${translations[currentLang].total || 'Total:'} $${total}</div>
                         ${itemsHtml ? `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px">${itemsHtml}</div>` : ''}
-                        ${duration ? `<div style="margin-top:6px;font-size:0.85rem;color:var(--accent)">Tiempo: ${duration}</div>` : ''}
-                        ${finishedTime ? `<div style="margin-top:4px;color:var(--muted);font-size:0.85rem">Finalizado: ${escapeHtml(finishedTime)}</div>` : ''}
+                        ${duration ? `<div style="margin-top:6px;font-size:0.85rem;color:var(--accent)">${translations[currentLang].timeLabel || 'Tiempo:'} ${duration}</div>` : ''}
+                        ${finishedTime ? `<div style="margin-top:4px;color:var(--muted);font-size:0.85rem">${translations[currentLang].finishedLabel || 'Finalizado:'} ${escapeHtml(finishedTime)}</div>` : ''}
                     </div>`
             }).join('')
         }
@@ -246,38 +241,7 @@
         // refresh timers every second
         setInterval(updateTimers,1000);
 
-        // Page zoom slider (orders page only) — persists value and supports Ctrl+wheel
-        (function(){
-            const slider = document.getElementById('pageZoom');
-            if(!slider) return;
-            const label = document.getElementById('pageZoomValue');
-            const layout = document.querySelector('.orders-layout');
-            const apply = (v) => {
-                // apply transform scale to the orders-layout only
-                const val = Number(v) || 1;
-                if(layout) layout.style.transform = `scale(${val})`;
-                if(label) label.textContent = Math.round(val*100) + '%';
-            };
-            const saved = localStorage.getItem('orders.pageZoom');
-            const start = saved ? Number(saved) : Number(slider.value || 1);
-            slider.value = start;
-            apply(start);
-            slider.addEventListener('input', (e)=> apply(e.target.value));
-            slider.addEventListener('change', (e)=> localStorage.setItem('orders.pageZoom', e.target.value));
-
-            window.addEventListener('wheel', (e)=>{
-                if(e.ctrlKey){
-                    e.preventDefault();
-                    const delta = -e.deltaY * 0.0015;
-                    let cur = Number(slider.value) || 1;
-                    let nv = Math.min(Math.max(cur + delta, Number(slider.min)), Number(slider.max));
-                    nv = Math.round(nv*100)/100;
-                    slider.value = nv;
-                    apply(nv);
-                    localStorage.setItem('orders.pageZoom', nv);
-                }
-            }, {passive:false});
-        })();
+        // page zoom behavior removed
     </script>
     
 </body>

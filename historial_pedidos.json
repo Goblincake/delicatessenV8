@@ -2,118 +2,20 @@
   {
     "id": 1,
     "code": "P001",
-    "timestamp": "2025-12-29 17:18:10",
+    "timestamp": "2025-12-29 19:52:25",
     "customer": "Cliente Ocasional",
-    "items": {
-      "Hamburguesa con Queso": {
-        "quantity": 3,
-        "per_unit": 2000.0,
-        "line_total": 6000.0,
-        "options": null
-      }
-    },
-    "notes": "",
-    "total": 6000.0,
-    "status": "completed",
-    "finished_at": "2025-12-29 17:21:23",
-    "driver": "Goblincake",
-    "assigned_at": "2025-12-29 17:21:21",
-    "assigned_ttl": 30
-  },
-  {
-    "id": 2,
-    "code": "P002",
-    "timestamp": "2025-12-29 17:41:05",
-    "customer": "Cliente Ocasional",
+    "address": "",
     "items": {
       "Milanesa Simple": {
-        "quantity": 2,
-        "per_unit": 2300.0,
-        "line_total": 4600.0,
-        "options": null
-      }
-    },
-    "notes": "",
-    "total": 4600.0,
-    "status": "completed",
-    "finished_at": "2025-12-29 18:42:13",
-    "assigned_at": "2025-12-29 17:49:34",
-    "assigned_ttl": 50,
-    "driver": "Goblincake"
-  },
-  {
-    "id": 3,
-    "code": "P003",
-    "timestamp": "2025-12-29 17:55:55",
-    "customer": "Cliente Ocasional",
-    "address": "",
-    "items": {
-      "Milanesa con Puré": {
-        "quantity": 1,
-        "per_unit": 2700.0,
-        "line_total": 2700.0,
-        "options": null
-      }
-    },
-    "notes": "",
-    "total": 2700.0,
-    "status": "finished",
-    "finished_at": "2025-12-29 17:56:58"
-  },
-  {
-    "id": 4,
-    "code": "P004",
-    "timestamp": "2025-12-29 17:56:15",
-    "customer": "Cliente Ocasional",
-    "address": "",
-    "items": {
-      "Hamburguesa con Huevo": {
-        "quantity": 1,
-        "per_unit": 2200.0,
-        "line_total": 2200.0,
-        "options": null
-      }
-    },
-    "notes": "",
-    "total": 2200.0,
-    "status": "finished",
-    "finished_at": "2025-12-29 17:56:23"
-  },
-  {
-    "id": 5,
-    "code": "P005",
-    "timestamp": "2025-12-29 17:57:33",
-    "customer": "Cliente Ocasional",
-    "address": "",
-    "items": {
-      "Hamburguesa con Huevo": {
-        "quantity": 1,
-        "per_unit": 2200.0,
-        "line_total": 2200.0,
-        "options": null
-      }
-    },
-    "notes": "",
-    "total": 2200.0,
-    "status": "pending"
-  },
-  {
-    "id": 6,
-    "code": "P006",
-    "timestamp": "2025-12-29 17:59:10",
-    "customer": "Cliente Ocasional",
-    "address": "",
-    "items": {
-      "Hamburguesa con Huevo": {
         "quantity": 3,
-        "per_unit": 2200.0,
-        "line_total": 6600.0,
+        "per_unit": 2300.0,
+        "line_total": 6900.0,
         "options": null
       }
     },
     "notes": "",
-    "total": 6600.0,
+    "total": 6900.0,
     "status": "finished",
-    "finished_at": "2025-12-29 17:59:31"
+    "finished_at": "2025-12-29 19:52:46"
   }
 ]
