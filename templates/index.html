@@ -888,6 +888,12 @@
             bindMenuItems();
         }
 
+        // handle navigation back/forward cache restores where DOMContentLoaded may not fire
+        window.addEventListener('pageshow', function(e){
+            // rebind handlers when page is shown from bfcache or navigation
+            bindMenuItems();
+        });
+
         function removeFromOrder(item) {
             if (selectedItems[item]) {
                 if (selectedItems[item].quantity > 1) {
