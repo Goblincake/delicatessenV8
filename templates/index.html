@@ -61,14 +61,30 @@
         .main-content {
             display: flex;
             flex: 1;
-            overflow: hidden;
+            gap: 1rem;
+            align-items: flex-start;
+            overflow-y: auto;
+            padding: 0 1rem 1rem 1rem;
         }
 
         /* Menu Panel */
         .menu-panel {
-            flex: 2;
+            flex: 2 1 0;
             padding: 1rem;
             overflow-y: auto;
+            min-width: 280px;
+        }
+
+        .order-panel {
+            flex: 1 0 360px;
+            min-width: 300px;
+            max-width: 480px;
+        }
+
+        .ready-orders-panel {
+            flex: 0 0 360px;
+            min-width: 260px;
+            max-width: 380px;
         }
 
         .category {
@@ -758,65 +774,55 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Ready Orders Panel (right column) -->
+            <aside class="ready-orders-panel" style="margin-left:1rem; width:360px; min-width:260px;">
+                <div style="padding:0.5rem 1rem; display:flex; gap:1rem; align-items:center;">
+                    <strong style="font-size:0.95rem;">Estado de Debug:</strong>
+                    <div id="readyDebug" style="background:var(--bg-card);padding:0.25rem 0.5rem;border-radius:6px;">Pedidos listos: <span id="readyCount">0</span></div>
+                    <button id="toggleReadyBtn" class="btn btn-secondary" style="padding:0.25rem 0.5rem;">Ocultar/Mostrar lista</button>
+                </div>
+                <div class="order-header" style="padding:0.5rem 1rem;">
+                    <h2 id="readyTitle">🚚 Pedidos Listos para Entrega</h2>
+                </div>
+                <div style="padding:0.75rem; display:flex; flex-direction:column; gap:0.75rem;">
+                    <div class="ready-orders-list" id="readyOrdersList" style="padding:0;">
+                        <div class="order-empty"><p>No hay pedidos listos</p></div>
+                    </div>
+                    <!-- Bulk Assign Section -->
+                    <div style="margin-top:0; padding:0.6rem; background:var(--bg-card); border-radius:8px; border:1px solid var(--border);">
+                        <h4 style="margin:0 0 0.5rem 0; font-size:0.95rem;">Asignar Seleccionados</h4>
+                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                            <select id="bulkDriverSelect" style="flex:1;">
+                                <option value="">-- Seleccionar Repartidor --</option>
+                            </select>
+                            <button id="bulkAssignBtn" class="btn btn-primary" style="padding:0.4rem 0.8rem;">Asignar</button>
+                            <button id="selectAllBtn" class="btn btn-secondary" style="padding:0.4rem 0.8rem;">Seleccionar Todos</button>
+                        </div>
+                    </div>
+
+                    <div id="assignedList">
+                        <div class="order-header" style="padding:0.4rem 1rem;">
+                            <h3 style="margin:0; font-size:0.95rem;">🟦 Asignados</h3>
+                        </div>
+                        <div style="padding:0.5rem;">
+                            <div class="order-empty" id="assignedEmpty"><p>No hay repartidores asignados</p></div>
+                            <div id="assignedItems"></div>
+                        </div>
+                    </div>
+
+                    <div id="completedList">
+                        <div class="order-header" style="padding:0.4rem 1rem;">
+                            <h3 style="margin:0; font-size:0.95rem;">✅ Completados</h3>
+                        </div>
+                        <div style="padding:0.5rem;">
+                            <div class="order-empty" id="completedEmpty"><p>No hay pedidos completados</p></div>
+                            <div id="completedItems"></div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
         </main>
-
-        <!-- Ready Orders Panel (moved below container to avoid overlap) -->
-    </div>
-
-    <!-- Ready Orders Panel (placed below main container to avoid overlapping the menu) -->
-    <div class="ready-orders-panel" style="margin-top:1rem;">
-        <div style="padding:0.5rem 2rem; display:flex; gap:1rem; align-items:center;">
-            <strong style="font-size:0.95rem;">Estado de Debug:</strong>
-            <div id="readyDebug" style="background:var(--bg-card);padding:0.25rem 0.5rem;border-radius:6px;">Pedidos listos: <span id="readyCount">0</span></div>
-            <button id="toggleReadyBtn" class="btn btn-secondary" style="padding:0.25rem 0.5rem;">Ocultar/Mostrar lista</button>
-        </div>
-        <div class="order-header" style="padding:0.75rem 2rem;">
-            <h2 id="readyTitle">🚚 Pedidos Listos para Entrega</h2>
-        </div>
-        <div style="display:flex; gap:1rem; padding:1rem;">
-            <div style="flex:1;">
-                <div class="ready-orders-list" id="readyOrdersList" style="padding:0;">
-                    <div class="order-empty">
-                        <p>No hay pedidos listos</p>
-                    </div>
-                </div>
-                <!-- Bulk Assign Section -->
-                <div style="margin-top:1rem; padding:1rem; background:var(--bg-card); border-radius:8px; border:1px solid var(--border);">
-                    <h4 style="margin:0 0 0.5rem 0; font-size:1rem;">Asignar Seleccionados</h4>
-                    <div style="display:flex; gap:0.5rem; align-items:center;">
-                        <select id="bulkDriverSelect" style="flex:1;">
-                            <option value="">-- Seleccionar Repartidor --</option>
-                        </select>
-                        <button id="bulkAssignBtn" class="btn btn-primary" style="padding:0.5rem 1rem;">Asignar</button>
-                        <button id="selectAllBtn" class="btn btn-secondary" style="padding:0.5rem 1rem;">Seleccionar Todos</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="assignedList" style="width:320px; min-width:260px;">
-                <div class="order-header" style="padding:0.5rem 1rem;">
-                    <h3 style="margin:0; font-size:1rem;">🟦 Asignados</h3>
-                </div>
-                <div style="padding:0.75rem;">
-                    <div class="order-empty" id="assignedEmpty">
-                        <p>No hay repartidores asignados</p>
-                    </div>
-                    <div id="assignedItems"></div>
-                </div>
-            </div>
-
-            <div id="completedList" style="width:320px; min-width:260px;">
-                <div class="order-header" style="padding:0.5rem 1rem;">
-                    <h3 style="margin:0; font-size:1rem;">✅ Completados</h3>
-                </div>
-                <div style="padding:0.75rem;">
-                    <div class="order-empty" id="completedEmpty">
-                        <p>No hay pedidos completados</p>
-                    </div>
-                    <div id="completedItems"></div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Receipt Modal -->
