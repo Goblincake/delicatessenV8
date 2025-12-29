@@ -755,7 +755,7 @@
                 });
                 modalHtml += `</div>`;
                 modalHtml += `<div style="margin-top:8px;display:flex;gap:8px;align-items:center"><label>Cantidad: <input id="modQty" type=number value=1 min=1 style="width:64px;margin-left:6px"></label><div id="modPrice" style="margin-left:auto;font-weight:700">$${itemData.price}</div></div>`;
-                modalHtml += `<div style="margin-top:12px;text-align:right"><button onclick="closeModal('customModal')" class="btn-secondary" style="margin-right:8px">Cancelar</button><button class="btn-primary" id="confirmModBtn">Agregar</button></div>`;
+                    modalHtml += `<div style="margin-top:12px;text-align:right"><button id="cancelModBtn" class="btn-secondary" style="margin-right:8px">Cancelar</button><button class="btn-primary" id="confirmModBtn">Agregar</button></div>`;
                 modalHtml += `</div>`;
 
                 let holder = document.getElementById('customModal');
@@ -765,7 +765,8 @@
                     holder.className = 'modal-overlay';
                     holder.innerHTML = `<div class="modal">${modalHtml}</div>`;
                     document.body.appendChild(holder);
-                    holder.addEventListener('click', (ev)=>{ if(ev.target === holder) closeModal('customModal') });
+                    // click outside closes
+                    holder.addEventListener('click', (ev)=>{ if(ev.target === holder) closeCustom() });
                 } else {
                     holder.innerHTML = `<div class="modal">${modalHtml}</div>`;
                     holder.style.display = 'block';
@@ -796,10 +797,40 @@
                     const summary = Object.keys(opts).filter(k=>opts[k]).join(', ');
                     const displayName = summary ? `${itemName} (${summary})` : itemName;
                     addCustomizedToOrder(displayName, itemName, Math.round(price/qty), qty, opts);
-                    closeModal('customModal');
+                    closeCustom();
                 });
 
-                function closeModal(id){ const el = document.getElementById(id); if(el) el.style.display='none'; }
+                    const cancelBtn = holder.querySelector('#cancelModBtn');
+                    if(cancelBtn) cancelBtn.addEventListener('click', ()=> closeCustom());
+
+                // focus trap and escape handling
+                const keyHandler = (e)=>{
+                    if(e.key === 'Escape'){
+                        e.preventDefault();
+                        closeCustom();
+                        return;
+                    }
+                    if(e.key === 'Tab'){
+                        const focusable = Array.from(holder.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled && el.offsetParent !== null);
+                        if(focusable.length === 0) return;
+                        const first = focusable[0];
+                        const last = focusable[focusable.length-1];
+                        if(e.shiftKey){ if(document.activeElement === first){ e.preventDefault(); last.focus(); } }
+                        else { if(document.activeElement === last){ e.preventDefault(); first.focus(); } }
+                    }
+                };
+
+                function closeCustom(){
+                    try{ holder.style.display = 'none'; }catch(e){}
+                    document.removeEventListener('keydown', keyHandler);
+                }
+
+                // attach key handler and set initial focus
+                document.addEventListener('keydown', keyHandler);
+                setTimeout(()=>{
+                    const focusable = Array.from(holder.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled && el.offsetParent !== null);
+                    if(focusable.length) focusable[0].focus();
+                }, 10);
 
             }catch(e){ console.error(e); showToast('Error al abrir personalización') }
         }
