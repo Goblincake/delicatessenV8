@@ -1,0 +1,28 @@
+name: CI — Lint, Types, Tests
+
+on:
+  push:
+    branches: [ develop, main ]
+  pull_request:
+    branches: [ develop, main ]
+
+jobs:
+  checks:
+    name: Run checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Make CI script executable
+        run: |
+          chmod +x ci/run_checks.sh
+
+      - name: Run CI checks
+        run: |
+          ./ci/run_checks.sh
