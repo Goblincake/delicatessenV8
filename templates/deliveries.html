@@ -103,8 +103,9 @@
         renderOrders();
 
         // Language toggle
-        if (typeof translations === 'undefined') {
-            var translations = {
+        // Safely merge page-specific translations into the global translations object
+        if (typeof window !== 'undefined') {
+            const pageTranslations = {
                 es: {
                     menu: "🛒 Menú",
                     pedidos: "📋 Pedidos",
@@ -124,31 +125,17 @@
                     title: "Deliveries - Assign Drivers"
                 }
             };
-        } else {
-            Object.assign(translations, {
-                es: {
-                    menu: "🛒 Menú",
-                    pedidos: "📋 Pedidos",
-                    analytics: "📊 Análisis",
-                    drivers: "🛵 Repartidores",
-                    deliveries: "🚚 Entregas",
-                    langBtn: "🌐 EN",
-                    title: "Entregas - Asignar Repartidores"
-                },
-                en: {
-                    menu: "🛒 Menu",
-                    pedidos: "📋 Orders",
-                    analytics: "📊 Analytics",
-                    drivers: "🛵 Drivers",
-                    deliveries: "🚚 Deliveries",
-                    langBtn: "🌐 ES",
-                    title: "Deliveries - Assign Drivers"
-                }
-            });
+
+            if (typeof translations === 'undefined') {
+                window.translations = pageTranslations;
+            } else {
+                Object.assign(translations, pageTranslations);
+            }
         }
 
+        // Initialise or reuse `currentLang` without redeclaring
         if (typeof currentLang === 'undefined') {
-            var currentLang = localStorage.getItem('lang') || 'es';
+            try { currentLang = localStorage.getItem('lang') || 'es'; } catch (e) { window.currentLang = localStorage.getItem('lang') || 'es'; }
         } else {
             currentLang = currentLang || localStorage.getItem('lang') || 'es';
         }
