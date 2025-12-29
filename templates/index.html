@@ -835,6 +835,28 @@
             }catch(e){ console.error(e); showToast('Error al abrir personalización') }
         }
 
+        // Attach click handlers to menu items (fix double-click issues from inline handlers)
+        function bindMenuItems(){
+            document.querySelectorAll('.menu-item').forEach(el=>{
+                // remove any existing handler to avoid duplicates
+                el.replaceWith(el.cloneNode(true));
+            });
+            document.querySelectorAll('.menu-item').forEach(el=>{
+                el.addEventListener('click', (e)=>{
+                    const item = el.getAttribute('data-item');
+                    const price = parseInt(el.getAttribute('data-price')) || 0;
+                    if(el.getAttribute('data-has-mod')){
+                        openCustomization(item);
+                    } else {
+                        addToOrder(item, price);
+                    }
+                });
+            });
+        }
+
+        // bind after initial render
+        setTimeout(bindMenuItems, 50);
+
         function removeFromOrder(item) {
             if (selectedItems[item]) {
                 if (selectedItems[item].quantity > 1) {
