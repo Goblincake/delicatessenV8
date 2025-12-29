@@ -1172,11 +1172,11 @@
                 const holder = document.getElementById('modalCanvasHolder');
                 titleEl.textContent = 'Breakdown for ' + formatDate(date);
                 // layout: left = summary, middle = products, right = couriers
-                const productsHtml = (breakdown.products || []).map(([name,qty]) => `<li style="padding:0.15rem 0;">${escapeHtml(name)} <strong style="float:right;">${qty}</strong></li>`).join('') || '<li style="color:var(--fg-muted)">No products</li>';
-                const couriersHtml = (breakdown.couriers || []).map(([name,qty]) => `<li style="padding:0.15rem 0;">${escapeHtml(name)} <strong style="float:right;">${qty}</strong></li>`).join('') || '<li style="color:var(--fg-muted)">No couriers</li>';
+                const productsHtml = (breakdown.products || []).map(([name,qty]) => `<li style="padding:0.15rem 0;display:flex;justify-content:space-between;align-items:center;">${escapeHtml(name)}<span style=\"margin-left:1rem;font-weight:600;color:var(--fg)\">${qty}</span></li>`).join('') || '<li style="color:var(--fg-muted)">No products</li>';
+                const couriersHtml = (breakdown.couriers || []).map(([name,qty]) => `<li style="padding:0.15rem 0;display:flex;justify-content:space-between;align-items:center;">${escapeHtml(name)}<span style=\"margin-left:1rem;font-weight:600;color:var(--fg)\">${qty}</span></li>`).join('') || '<li style="color:var(--fg-muted)">No couriers</li>';
                 holder.innerHTML = `
-                    <div style="display:grid;grid-template-columns:2fr 1.5fr 1fr;gap:1rem;padding:0.5rem;color:var(--fg);align-items:start;">
-                        <div>
+                    <div style="display:grid;grid-template-columns:1.4fr 1.8fr 0.8fr;gap:1rem;padding:0.5rem;color:var(--fg);align-items:start;">
+                        <div style="padding-right:0.75rem;">
                             <div><strong>Orders:</strong> ${breakdown.orders}</div>
                             <div><strong>Total Revenue:</strong> $${Number(breakdown.revenue || 0).toLocaleString()}</div>
                             <div><strong>Product COGS:</strong> $${Number(breakdown.product_cogs).toLocaleString()}</div>
@@ -1186,13 +1186,13 @@
                             <div style="margin-top:0.5rem;"><strong>Total Costs:</strong> $${Number(breakdown.total_cost).toLocaleString()}</div>
                             <div style="margin-top:0.5rem;color:${breakdown.profit<0?'#f44336':'#4caf50'};"><strong>Net Profit:</strong> $${Number(breakdown.profit).toLocaleString()}</div>
                         </div>
-                        <div style="padding:0 0.75rem;min-width:220px;">
+                        <div style="padding:0 1rem;border-left:1px solid var(--border);border-right:1px solid transparent;">
                             <h4 style="margin:0 0 0.5rem 0;color:var(--fg);text-align:center;">Products Sold</h4>
-                            <ul style="list-style:none;padding:0.15rem 0.5rem;margin:0;max-height:320px;overflow:auto;color:var(--fg);">${productsHtml}</ul>
+                            <ul style="list-style:none;padding:0.15rem 0.5rem;margin:0;max-height:380px;overflow:auto;color:var(--fg);">${productsHtml}</ul>
                         </div>
-                        <div>
-                            <h4 style="margin:0 0 0.5rem 0;color:var(--fg);">Couriers</h4>
-                            <ul style="list-style:none;padding:0;margin:0;max-height:320px;overflow:auto;color:var(--fg);">${couriersHtml}</ul>
+                        <div style="padding-left:1rem;border-left:1px solid var(--border);">
+                            <h4 style="margin:0 0 0.5rem 0;color:var(--fg);text-align:center;">Couriers</h4>
+                            <ul style="list-style:none;padding:0;margin:0;max-height:380px;overflow:auto;color:var(--fg);">${couriersHtml}</ul>
                         </div>
                     </div>
                 `;
