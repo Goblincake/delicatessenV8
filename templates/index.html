@@ -172,15 +172,17 @@
             font-weight: 600;
             font-size: 0.95rem;
             white-space: nowrap;
-            position: absolute; /* keep price in top-right and out of name flow */
+            position: absolute; /* keep price out of name flow */
             right: 0.6rem;
-            top: 0.45rem;
-            transform: translateY(0);
+            top: 50%; /* vertically center price */
+            transform: translateY(-50%);
+            line-height: 1;
         }
 
         /* ensure name doesn't flow under the absolutely-positioned price */
         .menu-item .item-name {
-            margin-right: 3.6rem;
+            margin-right: 4.2rem; /* slightly larger reserve for wider prices */
+            max-width: calc(100% - 68px); /* ensure name wraps before hitting price */
         }
 
         /* Order Panel */
